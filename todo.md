@@ -1,21 +1,9 @@
-# ✅ Home Restaurada - Modal/Sidebar Removido
-
-## ✅ Restauração Concluída:
-
-### Arquivos Removidos:
-- ❌ `sidebar-context.tsx` - Context do sidebar removido
-- ❌ `schema-explorer-sidebar.tsx` - Componente sidebar removido
-
-### Arquivos Restaurados:
-- ✅ `layout.tsx` - Layout original restaurado
-- ✅ `dock-navigation.tsx` - Dock original com modal
-- ✅ Home page com EntityNavigator funcionando
-
-### Funcionalidades Restauradas:
-- ✅ Home page com EntityNavigator
-- ✅ File tree funcionando na home
-- ✅ Modal Schema Explorer original
-- ✅ Navegação entre páginas (/ e /demo)
-- ✅ Dock de navegação funcional
-
-## Status: ✅ RESTAURAÇÃO CONCLUÍDA
+- [x] Analisar estrutura do projeto
+- [x] Criar .gitignore com pastas desnecessárias comuns
+- [x] Adicionar regras específicas para Node.js/Next.js
+- [x] Adicionar regras específicas para pnpm workspace
+- [x] Adicionar regras para Magic UI e app folders
+- [x] Adicionar botão toggle no Schema Explorer Modal
+- [x] Implementar controle de visibilidade do sidebar
+- [x] Adicionar ícones PanelLeftClose e PanelLeftOpen
+- [x] Fazer commit e push das alterações

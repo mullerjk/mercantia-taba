@@ -3,12 +3,13 @@
 import { Dock, DockIcon } from "@/components/magicui/dock";
 import { Home, FileText, Trees } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import SchemaExplorerModal from "@/components/schema-explorer-modal";
 
-export function DockNavigation() {
-  const [isSchemaExplorerOpen, setIsSchemaExplorerOpen] = useState(false)
+interface DockNavigationProps {
+  showSidebar: boolean;
+  onToggleSidebar: () => void;
+}
 
+export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationProps) {
   return (
     <>
       <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center mb-6">
@@ -23,13 +24,13 @@ export function DockNavigation() {
             </Link>
           </DockIcon>
 
-          {/* Schema Explorer Icon */}
+          {/* Schema Explorer Toggle */}
           <DockIcon>
             <button
-              onClick={() => setIsSchemaExplorerOpen(true)}
+              onClick={onToggleSidebar}
               className="flex size-12 rounded-full items-center justify-center hover:bg-muted transition-colors"
-              aria-label="Schema Explorer"
-              title="Schema Explorer"
+              aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+              title={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
             >
               <Trees className="w-4 h-4 text-foreground" />
             </button>
@@ -46,12 +47,6 @@ export function DockNavigation() {
           </DockIcon>
         </Dock>
       </div>
-      
-      {/* Schema Explorer Modal */}
-      <SchemaExplorerModal 
-        isOpen={isSchemaExplorerOpen}
-        onClose={() => setIsSchemaExplorerOpen(false)}
-      />
     </>
   )
 }
