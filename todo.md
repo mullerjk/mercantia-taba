@@ -7,4 +7,7 @@
 - [x] Implementar toggle na sidebar principal da home
 - [x] Atualizar DockNavigation para controlar sidebar state
 - [x] Adicionar estado local na HomePage
+- [x] Corrigir erro 'onToggleSidebar is not a function'
+- [x] Remover DockNavigation duplicado do layout.tsx
 - [x] Fazer commit e push das alterações
+- [x] Testar funcionalidade de toggle

@@ -6,7 +6,7 @@ import { DockNavigation } from "@/components/dock-navigation";
 import { mockSchemaData } from "@/data/mock-schemas";
 
 export default function HomePage() {
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const toggleSidebar = () => {
     setShowSidebar(!showSidebar);
