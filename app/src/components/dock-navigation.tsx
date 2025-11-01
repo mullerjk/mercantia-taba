@@ -15,6 +15,16 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
 
   return (
     <>
+      {/* Mercantia Full Screen Iframe */}
+      {showMercantia && (
+        <iframe 
+          src="https://mercantia.app"
+          className="fixed inset-0 w-full h-full border-0 z-[60] bg-white"
+          title="Mercantia Marketplace"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        />
+      )}
+      
       <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center mb-6">
         <Dock direction="middle">
           <DockIcon>
@@ -56,7 +66,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
           <DockIcon>
             <button
               onClick={() => setShowMercantia(!showMercantia)}
-              className="flex size-12 rounded-full items-center justify-center hover:bg-muted transition-colors bg-white border border-gray-200"
+              className="flex size-12 rounded-full items-center justify-center hover:bg-muted transition-colors"
               aria-label="Mercantia Marketplace"
               title="Mercantia Marketplace"
             >
@@ -78,31 +88,6 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
           </DockIcon>
         </Dock>
       </div>
-
-      {/* Mercantia Iframe Modal */}
-      {showMercantia && (
-        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-6xl h-[80vh] flex flex-col overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-xl font-semibold">Mercantia Marketplace</h2>
-              <button
-                onClick={() => setShowMercantia(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <iframe 
-                src="https://mercantia.app"
-                className="w-full h-full border-0"
-                title="Mercantia Marketplace"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
