@@ -275,4 +275,168 @@ export class SchemaExplorerIntegration {
     ];
   }
 
-  private createMinimalExample(typeName: string, properties
+  private createMinimalExample(typeName: string, properties: any[]): any {
+    // Create a minimal example with essential properties only
+    const minimalProps = properties.filter(p => 
+      ['name', 'description', 'url'].includes(p.name.toLowerCase())
+    ).slice(0, 3);
+    
+    const example: any = {
+      "@context": "https://schema.org",
+      "@type": typeName
+    };
+    
+    minimalProps.forEach(prop => {
+      if (prop.name === 'name') example[prop.name] = "Example " + typeName;
+      else if (prop.name === 'description') example[prop.name] = "A simple example of " + typeName;
+      else if (prop.name === 'url') example[prop.name] = "https://example.com/" + typeName.toLowerCase();
+    });
+    
+    return example;
+  }
+
+  private createCompleteExample(typeName: string, properties: any[]): any {
+    // Create a comprehensive example
+    const example: any = {
+      "@context": "https://schema.org",
+      "@type": typeName
+    };
+    
+    properties.slice(0, 10).forEach(prop => {
+      if (prop.name === 'name') example[prop.name] = "Complete " + typeName + " Example";
+      else if (prop.name === 'description') example[prop.name] = "A comprehensive example showcasing all features of " + typeName;
+      else if (prop.name === 'url') example[prop.name] = "https://example.com/complete-" + typeName.toLowerCase();
+    });
+    
+    return example;
+  }
+
+  private createRelatedExample(typeName: string, properties: any[]): any {
+    // Create an example showing relationships
+    const example: any = {
+      "@context": "https://schema.org",
+      "@type": typeName,
+      "name": "Related " + typeName + " Example",
+      "description": "An example showing relationships between entities"
+    };
+    
+    return example;
+  }
+
+  private async findSiblingTypes(parents: any[], currentTypeName: string): Promise<any[]> {
+    try {
+      const siblings: any[] = [];
+      
+      // For each parent, find all its children (which are siblings of currentType)
+      for (const parent of parents) {
+        try {
+          const parentTypeInfo = await this.getTypeInfo(parent.name);
+          siblings.push(...parentTypeInfo.hierarchy.children.filter((child: any) => 
+            child.name !== currentTypeName
+          ));
+        } catch (error) {
+          console.warn(`Could not get sibling info for parent ${parent.name}:`, error);
+        }
+      }
+      
+      // Remove duplicates and return
+      return siblings.filter((sibling, index, arr) => 
+        arr.findIndex(s => s.name === sibling.name) === index
+      ).slice(0, 10); // Limit to prevent overwhelming results
+    } catch (error) {
+      console.error('Error finding sibling types:', error);
+      return [];
+    }
+  }
+
+  private identifyCommonProperties(properties: any[]): any[] {
+    // Find properties that appear frequently across types
+    const commonProps = properties.filter(p => 
+      ['name', 'description', 'url', 'image', 'sameAs'].includes(p.name.toLowerCase())
+    );
+    return commonProps.slice(0, 5);
+  }
+
+  private findTypicalCombinations(typeName: string, properties: any[]): any[] {
+    // Return typical property combinations for this type
+    return [
+      {
+        name: "Basic Information",
+        properties: ['name', 'description'],
+        description: "Essential properties for any " + typeName
+      },
+      {
+        name: "Web Presence", 
+        properties: ['url', 'image'],
+        description: "Properties for online presence"
+      }
+    ];
+  }
+
+  private findDeprecatedAlternatives(typeName: string): any[] {
+    // Schema.org doesn't track deprecations in the data structure,
+    // so this returns empty array as placeholder
+    return [];
+  }
+
+  private generateBestPractices(typeInfo: any): string[] {
+    const practices = [];
+    
+    if (typeInfo.hierarchy.parents.length > 0) {
+      practices.push("Leverage inheritance from parent types where appropriate");
+    }
+    
+    const propertiesCount = typeInfo.properties.filter((p: any) => !p.inheritedFrom).length;
+    if (propertiesCount > 5) {
+      practices.push("Consider using only the most relevant properties for your use case");
+    }
+    
+    practices.push("Always include @context and @type in your JSON-LD");
+    practices.push("Use human-readable descriptions for better understanding");
+    
+    return practices;
+  }
+
+  private findAssociatedTypes(typeName: string, properties: any[]): any[] {
+    // Find types that are commonly used together based on property types
+    const associated: string[] = [];
+    
+    properties.forEach(prop => {
+      prop.expectedTypes?.forEach((type: string) => {
+        if (type !== typeName && !associated.includes(type)) {
+          associated.push(type);
+        }
+      });
+    });
+    
+    return associated.slice(0, 8);
+  }
+
+  private checkRequiredProperties(example: any, properties: any[]): boolean {
+    const requiredProps = this.identifyRequiredProperties(properties);
+    return requiredProps.every(prop => example[prop] !== undefined);
+  }
+
+  private validatePropertyTypes(example: any, properties: any[]): Record<string, boolean> {
+    const validation: Record<string, boolean> = {};
+    
+    properties.forEach(prop => {
+      if (example[prop.name] !== undefined) {
+        // Basic type validation - in real implementation, 
+        // this would be more sophisticated
+        validation[prop.name] = true;
+      }
+    });
+    
+    return validation;
+  }
+
+  private getRecommendedProperties(properties: any[]): string[] {
+    // Return most commonly used/recommended properties
+    const recommended = ['name', 'description', 'url', 'image'];
+    return properties
+      .filter(p => recommended.includes(p.name.toLowerCase()))
+      .map(p => p.name)
+      .slice(0, 4);
+  }
+}

@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Tree, Folder, File } from "./magicui/file-tree";
-import { Badge } from "./ui/badge";
+import { SchemaExplorerTree } from "./schema-explorer-tree";
 import { cn } from "@/lib/utils";
 
 interface GlobalSidebarProps {
@@ -14,6 +13,7 @@ interface GlobalSidebarProps {
 
 export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: GlobalSidebarProps) {
   const [currentRoute, setCurrentRoute] = useState<string>("thing");
+  const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
 
   // Handle escape key
   useEffect(() => {
@@ -35,9 +35,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
     };
   }, [isVisible, onClose]);
 
-  const handleRouteChange = (route: string) => {
-    setCurrentRoute(route);
-    onRouteChange(route);
+  const handleEntitySelect = (entityName: string) => {
+    setSelectedEntity(entityName);
+    setCurrentRoute(entityName);
+    onRouteChange(entityName);
   };
 
   if (!isVisible) return null;
@@ -78,306 +79,20 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
               Current: <code className="bg-muted px-1 rounded text-foreground">{currentRoute}</code>
+              {selectedEntity && (
+                <div className="mt-1">
+                  Selected: <code className="bg-secondary px-1 rounded text-foreground">{selectedEntity}</code>
+                </div>
+              )}
             </div>
           </div>
           
-          {/* Tree Navigation */}
-          <div className="flex-1 overflow-auto p-4">
-            <Tree className="h-full">
-              {/* Thing (Root) */}
-              <Folder
-                element="Thing (Root)"
-                value="thing"
-                isSelectable={true}
-                handleSelect={handleRouteChange}
-              >
-                <File 
-                  value="bio-entity" 
-                  isSelectable={true} 
-                  handleSelect={handleRouteChange}
-                  className={cn(
-                    "text-foreground",
-                    currentRoute === "bio-entity" ? "font-bold bg-secondary" : ""
-                  )}
-                >
-                  BioChemEntity
-                </File>
-                
-                <File 
-                  value="chemical-substance" 
-                  isSelectable={true} 
-                  handleSelect={handleRouteChange}
-                  className={cn(
-                    "text-foreground",
-                    currentRoute === "chemical-substance" ? "font-bold bg-secondary" : ""
-                  )}
-                >
-                  ChemicalSubstance
-                </File>
-                
-                <File 
-                  value="action" 
-                  isSelectable={true} 
-                  handleSelect={handleRouteChange}
-                  className={cn(
-                    "text-foreground",
-                    currentRoute === "action" ? "font-bold bg-secondary" : ""
-                  )}
-                >
-                  Action
-                </File>
-                
-                {/* CreativeWork */}
-                <Folder
-                  element="CreativeWork"
-                  value="creative-work"
-                  isSelectable={true}
-                  handleSelect={handleRouteChange}
-                >
-                  <File 
-                    value="blog-posting" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "blog-posting" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    BlogPosting
-                  </File>
-                  <File 
-                    value="news-article" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "news-article" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    NewsArticle
-                  </File>
-                  <File 
-                    value="scholarly-article" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "scholarly-article" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    ScholarlyArticle
-                  </File>
-                  <File 
-                    value="book" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "book" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    Book
-                  </File>
-                  <File 
-                    value="movie" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "movie" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    Movie
-                  </File>
-                </Folder>
-                
-                {/* Organization */}
-                <Folder
-                  element="Organization"
-                  value="organization"
-                  isSelectable={true}
-                  handleSelect={handleRouteChange}
-                >
-                  <File 
-                    value="corporation" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "corporation" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    Corporation
-                  </File>
-                  <File 
-                    value="local-business" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "local-business" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    LocalBusiness
-                  </File>
-                  <File 
-                    value="nonprofit" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "nonprofit" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    NonprofitOrganization
-                  </File>
-                </Folder>
-                
-                {/* Person */}
-                <Folder
-                  element="Person"
-                  value="person"
-                  isSelectable={true}
-                  handleSelect={handleRouteChange}
-                >
-                  <File 
-                    value="person-profile" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "person-profile" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    Person Profile
-                  </File>
-                </Folder>
-                
-                {/* Event */}
-                <Folder
-                  element="Event"
-                  value="event"
-                  isSelectable={true}
-                  handleSelect={handleRouteChange}
-                >
-                  <File 
-                    value="business-event" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "business-event" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    BusinessEvent
-                  </File>
-                  <File 
-                    value="festival" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "festival" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    Festival
-                  </File>
-                </Folder>
-                
-                {/* Product */}
-                <Folder
-                  element="Product"
-                  value="product"
-                  isSelectable={true}
-                  handleSelect={handleRouteChange}
-                >
-                  <File 
-                    value="software-app" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "software-app" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    SoftwareApplication
-                  </File>
-                  <File 
-                    value="vehicle" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "vehicle" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    Vehicle
-                  </File>
-                </Folder>
-                
-                {/* Place */}
-                <Folder
-                  element="Place"
-                  value="place"
-                  isSelectable={true}
-                  handleSelect={handleRouteChange}
-                >
-                  <File 
-                    value="administrative-area" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "administrative-area" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    AdministrativeArea
-                  </File>
-                  <File 
-                    value="residence" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "residence" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    Residence
-                  </File>
-                </Folder>
-                
-                {/* Intangible */}
-                <Folder
-                  element="Intangible"
-                  value="intangible"
-                  isSelectable={true}
-                  handleSelect={handleRouteChange}
-                >
-                  <File 
-                    value="brand" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "brand" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    Brand
-                  </File>
-                  <File 
-                    value="service" 
-                    isSelectable={true} 
-                    handleSelect={handleRouteChange}
-                    className={cn(
-                      "text-foreground",
-                      currentRoute === "service" ? "font-bold bg-secondary" : ""
-                    )}
-                  >
-                    Service
-                  </File>
-                </Folder>
-              </Folder>
-            </Tree>
+          {/* Schema Explorer Tree */}
+          <div className="flex-1 overflow-auto">
+            <SchemaExplorerTree 
+              onEntitySelect={handleEntitySelect}
+              className="h-full"
+            />
           </div>
         </div>
       </div>

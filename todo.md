@@ -1,13 +1,7 @@
-- [x] Analisar estrutura do projeto
-- [x] Criar .gitignore com pastas desnecessárias comuns
-- [x] Adicionar regras específicas para Node.js/Next.js
-- [x] Adicionar regras específicas para pnpm workspace
-- [x] Adicionar regras para Magic UI e app folders
-- [x] Remover SchemaExplorerModal popup
-- [x] Implementar toggle na sidebar principal da home
-- [x] Atualizar DockNavigation para controlar sidebar state
-- [x] Adicionar estado local na HomePage
-- [x] Corrigir erro 'onToggleSidebar is not a function'
-- [x] Remover DockNavigation duplicado do layout.tsx
-- [x] Fazer commit e push das alterações
-- [x] Testar funcionalidade de toggle
+# TODO LIST: Adicionar Efeito Animado à Borda do Dock
+
+- [x] Analisar o código atual do dock navigation
+- [x] Verificar componentes Magic UI disponíveis
+- [x] Implementar efeito de borda animado no dock
+- [x] Testar a implementação
+- [x] Verificar resultado final

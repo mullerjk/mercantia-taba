@@ -4,6 +4,10 @@ import { useState } from "react";
 import { DockNavigation } from "@/components/dock-navigation";
 import { GlobalSidebar } from "@/components/global-sidebar";
 import { Badge } from "@/components/ui/badge";
+import { RainbowButton } from "@/components/ui/rainbow-button";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { MagicCard } from "@/components/ui/magic-card";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 export default function Home() {
   const [showSidebar, setShowSidebar] = useState(false);
@@ -21,122 +25,224 @@ export default function Home() {
     switch (currentRoute) {
       case "thing":
         return (
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <span className="text-6xl mr-4">🌐</span>
-              <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2 text-foreground">Thing (Root)</h1>
-                <Badge className="bg-primary text-primary-foreground">
-                  Schema.org Root Class
-                </Badge>
+          <MagicCard 
+            gradientSize={300}
+            gradientFrom="#9E7AFF"
+            gradientTo="#FE8BBB"
+            className="p-8 relative"
+          >
+            <BorderBeam 
+              duration={6}
+              size={60}
+              colorFrom="#ffaa40"
+              colorTo="#9c40ff"
+            />
+            <div className="text-center relative z-10">
+              <div className="flex items-center justify-center mb-6">
+                <span className="text-6xl mr-4">🌐</span>
+                <div className="text-left">
+                  <h1 className="text-4xl font-bold mb-2 text-foreground">Thing (Root)</h1>
+                  <Badge className="bg-primary text-primary-foreground">
+                    Schema.org Root Class
+                  </Badge>
+                </div>
+              </div>
+              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+                The most generic type of item. All other Schema.org types are descendants of this type.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <RainbowButton size="lg">
+                  Explore Schema.org
+                </RainbowButton>
+                <ShimmerButton 
+                  background="rgba(158, 122, 255, 0.8)"
+                  shimmerColor="#ffffff"
+                >
+                  Learn More
+                </ShimmerButton>
               </div>
             </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              The most generic type of item. All other Schema.org types are descendants of this type.
-            </p>
-          </div>
+          </MagicCard>
         );
       case "bio-entity":
         return (
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <span className="text-6xl mr-4">🧬</span>
-              <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2 text-foreground">BioChemEntity</h1>
-                <Badge className="bg-primary text-primary-foreground">
-                  Schema.org Type
-                </Badge>
+          <MagicCard 
+            gradientSize={250}
+            gradientFrom="#34D399"
+            gradientTo="#10B981"
+            className="p-6"
+          >
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-6">
+                <span className="text-6xl mr-4">🧬</span>
+                <div className="text-left">
+                  <h1 className="text-4xl font-bold mb-2 text-foreground">BioChemEntity</h1>
+                  <Badge className="bg-green-500 text-white">
+                    Schema.org Type
+                  </Badge>
+                </div>
               </div>
+              <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Biological or chemical entities including proteins, DNA, RNA, and chemical compounds
+              </p>
+              <RainbowButton variant="outline" size="sm">
+                View Details
+              </RainbowButton>
             </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Biological or chemical entities including proteins, DNA, RNA, and chemical compounds
-            </p>
-          </div>
+          </MagicCard>
         );
       case "chemical-substance":
         return (
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <span className="text-6xl mr-4">⚗️</span>
-              <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2 text-foreground">ChemicalSubstance</h1>
-                <Badge className="bg-primary text-primary-foreground">
-                  Schema.org Type
-                </Badge>
+          <MagicCard 
+            gradientSize={250}
+            gradientFrom="#F59E0B"
+            gradientTo="#EF4444"
+            className="p-6"
+          >
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-6">
+                <span className="text-6xl mr-4">⚗️</span>
+                <div className="text-left">
+                  <h1 className="text-4xl font-bold mb-2 text-foreground">ChemicalSubstance</h1>
+                  <Badge className="bg-orange-500 text-white">
+                    Schema.org Type
+                  </Badge>
+                </div>
               </div>
+              <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Chemical compounds and substances
+              </p>
+              <ShimmerButton 
+                background="rgba(245, 158, 11, 0.8)"
+                shimmerColor="#ffffff"
+                shimmerSize="0.1em"
+              >
+                Explore Chemistry
+              </ShimmerButton>
             </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Chemical compounds and substances
-            </p>
-          </div>
+          </MagicCard>
         );
       case "action":
         return (
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <span className="text-6xl mr-4">⚡</span>
-              <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2 text-foreground">Action</h1>
-                <Badge className="bg-primary text-primary-foreground">
-                  Schema.org Type
-                </Badge>
+          <MagicCard 
+            gradientSize={250}
+            gradientFrom="#8B5CF6"
+            gradientTo="#3B82F6"
+            className="p-6"
+          >
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-6">
+                <span className="text-6xl mr-4">⚡</span>
+                <div className="text-left">
+                  <h1 className="text-4xl font-bold mb-2 text-foreground">Action</h1>
+                  <Badge className="bg-blue-500 text-white">
+                    Schema.org Type
+                  </Badge>
+                </div>
               </div>
+              <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Actions performed by agents
+              </p>
+              <RainbowButton size="sm">
+                See Actions
+              </RainbowButton>
             </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Actions performed by agents
-            </p>
-          </div>
+          </MagicCard>
         );
       case "creative-work":
         return (
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <span className="text-6xl mr-4">🎨</span>
-              <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2 text-foreground">CreativeWork</h1>
-                <Badge className="bg-primary text-primary-foreground">
-                  Schema.org Category
-                </Badge>
+          <MagicCard 
+            gradientSize={250}
+            gradientFrom="#EC4899"
+            gradientTo="#8B5CF6"
+            className="p-6"
+          >
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-6">
+                <span className="text-6xl mr-4">🎨</span>
+                <div className="text-left">
+                  <h1 className="text-4xl font-bold mb-2 text-foreground">CreativeWork</h1>
+                  <Badge className="bg-purple-500 text-white">
+                    Schema.org Category
+                  </Badge>
+                </div>
+              </div>
+              <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Creative works including books, movies, music, and art
+              </p>
+              <div className="flex gap-3 justify-center">
+                <RainbowButton size="sm" variant="outline">
+                  Browse
+                </RainbowButton>
+                <ShimmerButton 
+                  background="rgba(236, 72, 153, 0.8)"
+                  shimmerColor="#ffffff"
+                  shimmerSize="0.08em"
+                >
+                  Create
+                </ShimmerButton>
               </div>
             </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Creative works including books, movies, music, and art
-            </p>
-          </div>
+          </MagicCard>
         );
       case "organization":
         return (
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <span className="text-6xl mr-4">🏢</span>
-              <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2 text-foreground">Organization</h1>
-                <Badge className="bg-primary text-primary-foreground">
-                  Schema.org Category
-                </Badge>
+          <MagicCard 
+            gradientSize={250}
+            gradientFrom="#059669"
+            gradientTo="#0EA5E9"
+            className="p-6"
+          >
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-6">
+                <span className="text-6xl mr-4">🏢</span>
+                <div className="text-left">
+                  <h1 className="text-4xl font-bold mb-2 text-foreground">Organization</h1>
+                  <Badge className="bg-teal-500 text-white">
+                    Schema.org Category
+                  </Badge>
+                </div>
               </div>
+              <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Organizations, companies, and institutions
+              </p>
+              <RainbowButton>
+                View Organizations
+              </RainbowButton>
             </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Organizations, companies, and institutions
-            </p>
-          </div>
+          </MagicCard>
         );
       default:
         return (
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <span className="text-6xl mr-4">❓</span>
-              <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2 capitalize text-foreground">{currentRoute.replace('-', ' ')}</h1>
-                <Badge className="bg-primary text-primary-foreground">
-                  Schema.org Entity
-                </Badge>
+          <MagicCard 
+            gradientSize={300}
+            gradientFrom="#6B7280"
+            gradientTo="#374151"
+            className="p-8"
+          >
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-6">
+                <span className="text-6xl mr-4">❓</span>
+                <div className="text-left">
+                  <h1 className="text-4xl font-bold mb-2 capitalize text-foreground">
+                    {(currentRoute || 'Unknown').replace('-', ' ')}
+                  </h1>
+                  <Badge className="bg-gray-500 text-white">
+                    Schema.org Entity
+                  </Badge>
+                </div>
               </div>
+              <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+                Explore this Schema.org entity type
+              </p>
+              <ShimmerButton 
+                background="rgba(107, 114, 128, 0.8)"
+                shimmerColor="#ffffff"
+              >
+                Start Exploring
+              </ShimmerButton>
             </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Explore this Schema.org entity type
-            </p>
-          </div>
+          </MagicCard>
         );
     }
   };

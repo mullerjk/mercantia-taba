@@ -1,0 +1,394 @@
+"use client"
+
+import React, { useState, useEffect } from "react"
+import { Tree, Folder, File, type TreeViewElement, CollapseButton } from "@/components/magicui/file-tree"
+import { Search, ChevronDown, Database, FolderTree } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+
+interface SchemaEntityNode {
+  id: string
+  name: string
+  entityType: string
+  description?: string
+  propertiesCount?: number
+  parentTypes?: string[]
+  isAbstract?: boolean
+  children?: SchemaEntityNode[]
+}
+
+interface SchemaExplorerTreeProps {
+  onEntitySelect?: (entityName: string) => void
+  className?: string
+}
+
+export function SchemaExplorerTree({ onEntitySelect, className }: SchemaExplorerTreeProps) {
+  const [entities, setEntities] = useState<SchemaEntityNode[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedEntity, setSelectedEntity] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  // Initialize and load entities
+  useEffect(() => {
+    const initializeAndLoad = async () => {
+      try {
+        await loadSchemaEntities()
+      } catch (err) {
+        console.error("Failed to load schema entities:", err)
+        setError("Failed to load schema entities")
+        setLoading(false)
+      }
+    }
+
+    initializeAndLoad()
+  }, [])
+
+  const loadSchemaEntities = async () => {
+    try {
+      setLoading(true)
+      
+      // Load top-level schema types and build hierarchy
+      const topLevelEntities = await loadTopLevelEntities()
+      const allEntities = await buildEntityHierarchy(topLevelEntities)
+      
+      setEntities(allEntities)
+    } catch (err) {
+      console.error("Failed to load schema entities:", err)
+      setError("Failed to load schema entities")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadTopLevelEntities = async (): Promise<string[]> => {
+    // Load core Schema.org entities that don't inherit from other Schema.org types
+    return [
+      'Thing', 'Action', 'Place', 'Person', 'Organization', 'Event',
+      'Product', 'CreativeWork', 'Intangible', 'StructuredValue'
+    ]
+  }
+
+  const buildEntityHierarchy = async (topLevelEntities: string[]): Promise<SchemaEntityNode[]> => {
+    const entityNodes: SchemaEntityNode[] = []
+    
+    for (const entityName of topLevelEntities) {
+      try {
+        const typeInfo = await getMockTypeInfo(entityName)
+        
+        // Create node for this entity
+        const node: SchemaEntityNode = {
+          id: entityName,
+          name: entityName,
+          entityType: entityName,
+          description: typeInfo.type.description,
+          propertiesCount: typeInfo.properties.length,
+          parentTypes: typeInfo.hierarchy.parents.map((p: any) => p.name),
+          isAbstract: typeInfo.hierarchy.children.length === 0 && typeInfo.hierarchy.parents.length > 0,
+          children: []
+        }
+
+        // If this is a parent entity, load its children
+        if (typeInfo.hierarchy.children.length > 0) {
+          node.children = await Promise.all(
+            typeInfo.hierarchy.children.map(async (child: any) => {
+              try {
+                const childTypeInfo = await getMockTypeInfo(child.name)
+                return {
+                  id: child.name,
+                  name: child.name,
+                  entityType: child.name,
+                  description: childTypeInfo.type.description,
+                  propertiesCount: childTypeInfo.properties.length,
+                  parentTypes: childTypeInfo.hierarchy.parents.map((p: any) => p.name),
+                  isAbstract: childTypeInfo.hierarchy.children.length === 0 && childTypeInfo.hierarchy.parents.length > 0,
+                  children: childTypeInfo.hierarchy.children.length > 0 ? await buildChildHierarchy(child.name, 1) : []
+                } as SchemaEntityNode
+              } catch (err) {
+                // If we can't get child info, return basic node
+                return {
+                  id: child.name,
+                  name: child.name,
+                  entityType: child.name,
+                  isAbstract: false,
+                  children: []
+                } as SchemaEntityNode
+              }
+            })
+          )
+        }
+
+        entityNodes.push(node)
+      } catch (err) {
+        console.warn(`Failed to load entity ${entityName}:`, err)
+        // Add basic node if detailed info fails
+        entityNodes.push({
+          id: entityName,
+          name: entityName,
+          entityType: entityName,
+          isAbstract: false,
+          children: []
+        })
+      }
+    }
+
+    return entityNodes
+  }
+
+  const buildChildHierarchy = async (parentName: string, depth: number): Promise<SchemaEntityNode[]> => {
+    if (depth > 3) return [] // Limit recursion depth
+    
+    try {
+      const typeInfo = await getMockTypeInfo(parentName)
+      return await Promise.all(
+        typeInfo.hierarchy.children.map(async (child: any) => {
+          const childTypeInfo = await getMockTypeInfo(child.name)
+          const children = depth < 3 && childTypeInfo.hierarchy.children.length > 0 
+            ? await buildChildHierarchy(child.name, depth + 1)
+            : []
+          
+          return {
+            id: child.name,
+            name: child.name,
+            entityType: child.name,
+            description: childTypeInfo.type.description,
+            propertiesCount: childTypeInfo.properties.length,
+            parentTypes: childTypeInfo.hierarchy.parents.map((p: any) => p.name),
+            isAbstract: childTypeInfo.hierarchy.children.length === 0 && childTypeInfo.hierarchy.parents.length > 0,
+            children
+          } as SchemaEntityNode
+        })
+      )
+    } catch (err) {
+      console.warn(`Failed to build hierarchy for ${parentName}:`, err)
+      return []
+    }
+  }
+
+  // Mock function to provide schema.org entity data
+  const getMockTypeInfo = async (entityName: string) => {
+    const mockData: Record<string, any> = {
+      'Thing': {
+        type: { name: 'Thing', description: 'The most generic type of item' },
+        properties: [{ name: 'name' }, { name: 'description' }],
+        hierarchy: { parents: [], children: ['Action', 'Place', 'Person', 'Organization', 'CreativeWork', 'Product'] }
+      },
+      'Action': {
+        type: { name: 'Action', description: 'An action performed by a direct or indirect agent' },
+        properties: [{ name: 'name' }, { name: 'description' }, { name: 'agent' }],
+        hierarchy: { parents: ['Thing'], children: ['TradeAction', 'MoveAction', 'CommunicateAction'] }
+      },
+      'Place': {
+        type: { name: 'Place', description: 'Entities that have a somewhat fixed, physical extension' },
+        properties: [{ name: 'name' }, { name: 'description' }, { name: 'address' }],
+        hierarchy: { parents: ['Thing'], children: ['LocalBusiness', 'CivicStructure'] }
+      },
+      'Person': {
+        type: { name: 'Person', description: 'A person (alive, dead, undead, or fictional)' },
+        properties: [{ name: 'name' }, { name: 'description' }, { name: 'birthDate' }],
+        hierarchy: { parents: ['Thing'], children: [] }
+      },
+      'Organization': {
+        type: { name: 'Organization', description: 'An organization such as a school, NGO, corporation, club, etc' },
+        properties: [{ name: 'name' }, { name: 'description' }, { name: 'url' }],
+        hierarchy: { parents: ['Thing'], children: ['Corporation', 'NonprofitOrganization'] }
+      },
+      'Event': {
+        type: { name: 'Event', description: 'An event happening at a certain time and location' },
+        properties: [{ name: 'name' }, { name: 'description' }, { name: 'startDate' }],
+        hierarchy: { parents: ['Thing'], children: ['BusinessEvent', 'CulturalEvent'] }
+      },
+      'Product': {
+        type: { name: 'Product', description: 'Any product or service offered' },
+        properties: [{ name: 'name' }, { name: 'description' }, { name: 'brand' }],
+        hierarchy: { parents: ['Thing'], children: ['ProductModel'] }
+      },
+      'CreativeWork': {
+        type: { name: 'CreativeWork', description: 'The most generic kind of creative work' },
+        properties: [{ name: 'name' }, { name: 'description' }, { name: 'author' }],
+        hierarchy: { parents: ['Thing'], children: ['Article', 'Book', 'Movie'] }
+      },
+      'Intangible': {
+        type: { name: 'Intangible', description: 'A utility class that serves as the umbrella for a number of intangible entities' },
+        properties: [{ name: 'name' }, { name: 'description' }],
+        hierarchy: { parents: ['Thing'], children: ['Quantity', 'Service'] }
+      },
+      'StructuredValue': {
+        type: { name: 'StructuredValue', description: 'A structured value' },
+        properties: [{ name: 'name' }, { name: 'description' }],
+        hierarchy: { parents: ['Thing'], children: ['ContactPoint'] }
+      },
+      'TradeAction': {
+        type: { name: 'TradeAction', description: 'The act of participating in an exchange' },
+        properties: [{ name: 'name' }, { name: 'description' }, { name: 'price' }],
+        hierarchy: { parents: ['Action'], children: ['BuyAction', 'SellAction'] }
+      },
+      'MoveAction': {
+        type: { name: 'MoveAction', description: 'An agent moves an object' },
+        properties: [{ name: 'name' }, { name: 'description' }],
+        hierarchy: { parents: ['Action'], children: ['TravelAction'] }
+      },
+      'CommunicateAction': {
+        type: { name: 'CommunicateAction', description: 'The act of communicating information' },
+        properties: [{ name: 'name' }, { name: 'description' }],
+        hierarchy: { parents: ['Action'], children: ['InformAction'] }
+      }
+    }
+
+    return mockData[entityName] || {
+      type: { name: entityName, description: `Schema.org entity: ${entityName}` },
+      properties: [{ name: 'name' }, { name: 'description' }],
+      hierarchy: { parents: [], children: [] }
+    }
+  }
+
+  const handleEntitySelect = (entityId: string) => {
+    setSelectedEntity(entityId)
+    onEntitySelect?.(entityId)
+  }
+
+  const filteredEntities = searchQuery
+    ? entities.filter(entity => 
+        entity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entity.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : entities
+
+  if (loading) {
+    return (
+      <div className={`flex items-center justify-center p-8 ${className}`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading Schema.org entities...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className={`p-4 text-center ${className}`}>
+        <div className="text-destructive mb-4">{error}</div>
+        <Button onClick={() => loadSchemaEntities()} variant="outline" size="sm">
+          Retry
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`flex flex-col h-full ${className}`}>
+      {/* Search and Controls */}
+      <div className="p-4 border-b">
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search entities..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Database className="size-4" />
+          <span>{entities.length} entities loaded</span>
+          {searchQuery && (
+            <span>• {filteredEntities.length} matching</span>
+          )}
+        </div>
+      </div>
+
+      {/* Entity Tree */}
+      <div className="flex-1 overflow-auto p-2">
+        {filteredEntities.length === 0 ? (
+          <div className="text-center text-muted-foreground py-8">
+            No entities found matching "{searchQuery}"
+          </div>
+        ) : (
+          <Tree
+            elements={filteredEntities}
+            className="space-y-1"
+            initialExpandedItems={searchQuery ? [] : ['Thing', 'Action', 'Place', 'Person', 'Organization']}
+          >
+            {filteredEntities.map((entity) => (
+              <EntityNode
+                key={entity.id}
+                entity={entity}
+                selected={selectedEntity === entity.id}
+                onSelect={handleEntitySelect}
+              />
+            ))}
+            
+            <CollapseButton 
+              elements={filteredEntities}
+              className="mt-4"
+            >
+              <ChevronDown className="size-4" />
+            </CollapseButton>
+          </Tree>
+        )}
+      </div>
+    </div>
+  )
+}
+
+interface EntityNodeProps {
+  entity: SchemaEntityNode
+  selected: boolean
+  onSelect: (id: string) => void
+}
+
+function EntityNode({ entity, selected, onSelect }: EntityNodeProps) {
+  if (entity.children && entity.children.length > 0) {
+    return (
+      <Folder
+        value={entity.id}
+        element={entity.name}
+        isSelect={selected}
+        handleSelect={onSelect}
+      >
+        {entity.children.map((child) => (
+          <EntityNode
+            key={child.id}
+            entity={child}
+            selected={false}
+            onSelect={onSelect}
+          />
+        ))}
+      </Folder>
+    )
+  }
+
+  return (
+    <File
+      value={entity.id}
+      isSelect={selected}
+      handleSelect={onSelect}
+      fileIcon={<Database className="size-4 text-green-600" />}
+      className="hover:bg-accent hover:text-accent-foreground"
+    >
+      <div className="flex flex-col">
+        <div className="flex items-center justify-between">
+          <span>{entity.name}</span>
+          <div className="flex items-center gap-1">
+            {entity.isAbstract && (
+              <Badge variant="secondary" className="text-xs">abstract</Badge>
+            )}
+            {entity.propertiesCount !== undefined && (
+              <Badge variant="outline" className="text-xs">
+                {entity.propertiesCount}
+              </Badge>
+            )}
+          </div>
+        </div>
+        {entity.description && (
+          <div className="text-xs text-muted-foreground mt-1">
+            {entity.description.slice(0, 80)}{entity.description.length > 80 ? "..." : ""}
+          </div>
+        )}
+      </div>
+    </File>
+  )
+}

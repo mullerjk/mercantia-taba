@@ -17,14 +17,14 @@ import {
   BellOff,
   Volume2,
   VolumeX,
-  Download,
-  Upload,
   Trash2,
   Info,
   HelpCircle,
   ChevronRight,
   ChevronDown
 } from "lucide-react";
+
+export type ThemeType = "light" | "dark" | "system"
 
 export default function SettingsPage() {
   const [showSidebar, setShowSidebar] = useState(false);

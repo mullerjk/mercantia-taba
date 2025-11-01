@@ -35,29 +35,46 @@ export function ShineBorder({
   style,
   ...props
 }: ShineBorderProps) {
-  return (
-    <div
-      style={
-        {
-          "--border-width": `${borderWidth}px`,
-          "--duration": `${duration}s`,
-          backgroundImage: `radial-gradient(transparent,transparent, ${
-            Array.isArray(shineColor) ? shineColor.join(",") : shineColor
-          },transparent,transparent)`,
-          backgroundSize: "300% 300%",
-          mask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
-          WebkitMask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          padding: "var(--border-width)",
-          ...style,
-        } as React.CSSProperties
+  const colors = Array.isArray(shineColor) ? shineColor.join(",") : shineColor;
+  
+  const shineAnimation = `
+    @keyframes shine {
+      0% {
+        background-position: -200% center;
       }
-      className={cn(
-        "motion-safe:animate-shine pointer-events-none absolute inset-0 size-full rounded-[inherit] will-change-[background-position]",
-        className
-      )}
-      {...props}
-    />
-  )
+      100% {
+        background-position: 200% center;
+      }
+    }
+  `;
+  
+  const inlineStyle = {
+    "--border-width": `${borderWidth}px`,
+    "--duration": `${duration}s`,
+    backgroundImage: `radial-gradient(transparent,transparent, ${colors},transparent,transparent)`,
+    backgroundSize: "300% 300%",
+    backgroundPosition: "0% 0%",
+    mask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
+    WebkitMask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
+    WebkitMaskComposite: "xor",
+    maskComposite: "exclude",
+    padding: "var(--border-width)",
+    animation: `shine var(--duration) infinite linear`,
+    willChange: "background-position",
+    ...style,
+  };
+  
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: shineAnimation }} />
+      <div
+        style={inlineStyle as React.CSSProperties}
+        className={cn(
+          "pointer-events-none absolute inset-0 size-full rounded-[inherit]",
+          className
+        )}
+        {...props}
+      />
+    </>
+  );
 }

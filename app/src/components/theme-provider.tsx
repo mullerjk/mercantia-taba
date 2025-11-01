@@ -28,11 +28,29 @@ export function ThemeProvider({
   storageKey = "ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (typeof window !== "undefined" ? (localStorage.getItem(storageKey) as Theme) : defaultTheme) || defaultTheme
-  );
+  // Use defaultTheme initially to avoid hydration mismatch
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const [mounted, setMounted] = useState(false);
 
+  // Only run after component mounts to avoid hydration mismatch
   useEffect(() => {
+    setMounted(true);
+    
+    try {
+      const storedTheme = localStorage.getItem(storageKey) as Theme;
+      if (storedTheme && ["dark", "light", "system"].includes(storedTheme)) {
+        setTheme(storedTheme);
+      }
+    } catch (error) {
+      // localStorage might not be available
+      console.warn("Unable to access localStorage:", error);
+    }
+  }, [storageKey]);
+
+  // Apply theme changes
+  useEffect(() => {
+    if (!mounted) return;
+
     const root = window.document.documentElement;
 
     // Remove both light and dark classes
@@ -56,15 +74,28 @@ export function ThemeProvider({
       root.classList.add("dark");
     }
     // For light theme, don't add any class (default state)
-  }, [theme]);
+  }, [theme, mounted]);
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
+      try {
+        localStorage.setItem(storageKey, theme);
+      } catch (error) {
+        console.warn("Unable to save theme to localStorage:", error);
+      }
       setTheme(theme);
     },
   };
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <ThemeProviderContext.Provider value={value}>
+        {children}
+      </ThemeProviderContext.Provider>
+    );
+  }
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
