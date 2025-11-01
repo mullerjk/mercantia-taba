@@ -9,6 +9,7 @@ export default function HomePage() {
   const [showSidebar, setShowSidebar] = useState(true);
 
   const toggleSidebar = () => {
+    console.log('Toggling sidebar from', showSidebar, 'to', !showSidebar);
     setShowSidebar(!showSidebar);
   };
 
