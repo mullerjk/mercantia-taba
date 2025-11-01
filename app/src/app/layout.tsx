@@ -1,4 +1,5 @@
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata = {
   title: 'MagicUI Dock Demo',
@@ -13,7 +14,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-background">
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

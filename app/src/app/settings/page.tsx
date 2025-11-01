@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DockNavigation } from "@/components/dock-navigation";
 import { GlobalSidebar } from "@/components/global-sidebar";
+import { useTheme } from "@/components/theme-provider";
 import { 
   Settings as SettingsIcon, 
   Globe, 
@@ -27,7 +28,7 @@ import {
 
 export default function SettingsPage() {
   const [showSidebar, setShowSidebar] = useState(false);
-  const [theme, setTheme] = useState("system");
+  const { theme, setTheme } = useTheme();
   const [language, setLanguage] = useState("pt-BR");
   const [timezone, setTimezone] = useState("America/Sao_Paulo");
   const [notifications, setNotifications] = useState(true);
@@ -175,7 +176,7 @@ export default function SettingsPage() {
                         key={themeOption.value}
                         variant={theme === themeOption.value ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setTheme(themeOption.value)}
+                        onClick={() => setTheme(themeOption.value as any)}
                         className="flex items-center gap-2"
                       >
                         <IconComponent className="w-4 h-4" />
