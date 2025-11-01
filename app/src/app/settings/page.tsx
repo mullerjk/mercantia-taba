@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DockNavigation } from "@/components/dock-navigation";
+import { GlobalSidebar } from "@/components/global-sidebar";
 import { 
   Settings as SettingsIcon, 
   Globe, 
@@ -24,6 +26,7 @@ import {
 } from "lucide-react";
 
 export default function SettingsPage() {
+  const [showSidebar, setShowSidebar] = useState(false);
   const [theme, setTheme] = useState("system");
   const [language, setLanguage] = useState("pt-BR");
   const [timezone, setTimezone] = useState("America/Sao_Paulo");
@@ -38,6 +41,15 @@ export default function SettingsPage() {
     data: false,
     support: false
   });
+
+  const toggleSidebar = () => {
+    setShowSidebar(!showSidebar);
+  };
+
+  const handleRouteChange = (route: string) => {
+    // Handle sidebar navigation if needed
+    console.log("Route change:", route);
+  };
 
   const toggleSection = (section: string) => {
     setCollapsibleSections(prev => ({
@@ -133,203 +145,221 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 bg-primary/10 rounded-xl">
-            <SettingsIcon className="w-8 h-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold">Configurações</h1>
-            <p className="text-muted-foreground">Personalize sua experiência no Schema Explorer</p>
-          </div>
-        </div>
-
-        {/* Appearance Settings */}
-        <SettingSection title="Aparência" icon={Palette} sectionKey="appearance">
-          <SettingItem 
-            label="Tema" 
-            description="Escolha entre tema claro, escuro ou automático"
-          >
-            <div className="flex gap-2">
-              {themes.map((themeOption) => {
-                const IconComponent = themeOption.icon;
-                return (
-                  <Button
-                    key={themeOption.value}
-                    variant={theme === themeOption.value ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setTheme(themeOption.value)}
-                    className="flex items-center gap-2"
-                  >
-                    <IconComponent className="w-4 h-4" />
-                    {themeOption.label}
-                  </Button>
-                );
-              })}
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <div className="relative w-full">
+        <div className="p-8 pb-24"> {/* Bottom padding to account for dock */}
+          <div className="max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-3 bg-primary/10 rounded-xl">
+                <SettingsIcon className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Configurações</h1>
+                <p className="text-muted-foreground">Personalize sua experiência no Schema Explorer</p>
+              </div>
             </div>
-          </SettingItem>
-        </SettingSection>
 
-        {/* Language & Region Settings */}
-        <SettingSection title="Idioma e Região" icon={Globe} sectionKey="language">
-          <SettingItem 
-            label="Idioma" 
-            description="Selecione o idioma da interface"
-          >
-            <select 
-              value={language} 
-              onChange={(e) => setLanguage(e.target.value)}
-              className="px-3 py-2 border border-border rounded-lg bg-background"
-            >
-              {languages.map((lang) => (
-                <option key={lang.value} value={lang.value}>
-                  {lang.flag} {lang.label}
-                </option>
-              ))}
-            </select>
-          </SettingItem>
-          
-          <SettingItem 
-            label="Fuso Horário" 
-            description="Configure seu fuso horário local"
-          >
-            <select 
-              value={timezone} 
-              onChange={(e) => setTimezone(e.target.value)}
-              className="px-3 py-2 border border-border rounded-lg bg-background"
-            >
-              {timezones.map((tz) => (
-                <option key={tz.value} value={tz.value}>
-                  {tz.label}
-                </option>
-              ))}
-            </select>
-          </SettingItem>
-        </SettingSection>
+            {/* Appearance Settings */}
+            <SettingSection title="Aparência" icon={Palette} sectionKey="appearance">
+              <SettingItem 
+                label="Tema" 
+                description="Escolha entre tema claro, escuro ou automático"
+              >
+                <div className="flex gap-2">
+                  {themes.map((themeOption) => {
+                    const IconComponent = themeOption.icon;
+                    return (
+                      <Button
+                        key={themeOption.value}
+                        variant={theme === themeOption.value ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setTheme(themeOption.value)}
+                        className="flex items-center gap-2"
+                      >
+                        <IconComponent className="w-4 h-4" />
+                        {themeOption.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </SettingItem>
+            </SettingSection>
 
-        {/* Navigation Settings */}
-        <SettingSection title="Navegação" icon={ChevronRight} sectionKey="navigation">
-          <SettingItem 
-            label="Sidebar Visível por Padrão" 
-            description="Mostrar sidebar ao carregar a página"
-          >
-            <Button
-              variant={autoSave ? "default" : "outline"}
-              size="sm"
-              onClick={() => setAutoSave(!autoSave)}
-            >
-              {autoSave ? "Ativado" : "Desativado"}
-            </Button>
-          </SettingItem>
-          
-          <SettingItem 
-            label="Animações" 
-            description="Ativar animações de transição"
-          >
-            <Button
-              variant={autoSave ? "default" : "outline"}
-              size="sm"
-              onClick={() => setAutoSave(!autoSave)}
-            >
-              {autoSave ? "Ativado" : "Desativado"}
-            </Button>
-          </SettingItem>
-        </SettingSection>
+            {/* Language & Region Settings */}
+            <SettingSection title="Idioma e Região" icon={Globe} sectionKey="language">
+              <SettingItem 
+                label="Idioma" 
+                description="Selecione o idioma da interface"
+              >
+                <select 
+                  value={language} 
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="px-3 py-2 border border-border rounded-lg bg-background"
+                >
+                  {languages.map((lang) => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.flag} {lang.label}
+                    </option>
+                  ))}
+                </select>
+              </SettingItem>
+              
+              <SettingItem 
+                label="Fuso Horário" 
+                description="Configure seu fuso horário local"
+              >
+                <select 
+                  value={timezone} 
+                  onChange={(e) => setTimezone(e.target.value)}
+                  className="px-3 py-2 border border-border rounded-lg bg-background"
+                >
+                  {timezones.map((tz) => (
+                    <option key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </option>
+                  ))}
+                </select>
+              </SettingItem>
+            </SettingSection>
 
-        {/* Notifications Settings */}
-        <SettingSection title="Notificações" icon={Bell} sectionKey="notifications">
-          <SettingItem 
-            label="Notificações do Sistema" 
-            description="Receber notificações sobre atualizações"
-          >
-            <Button
-              variant={notifications ? "default" : "outline"}
-              size="sm"
-              onClick={() => setNotifications(!notifications)}
-              className="flex items-center gap-2"
-            >
-              {notifications ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-              {notifications ? "Ativado" : "Desativado"}
-            </Button>
-          </SettingItem>
-          
-          <SettingItem 
-            label="Sons de Notificação" 
-            description="Reproduzir sons para notificações"
-          >
-            <Button
-              variant={sound ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSound(!sound)}
-              className="flex items-center gap-2"
-            >
-              {sound ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              {sound ? "Ativado" : "Desativado"}
-            </Button>
-          </SettingItem>
-        </SettingSection>
+            {/* Navigation Settings */}
+            <SettingSection title="Navegação" icon={ChevronRight} sectionKey="navigation">
+              <SettingItem 
+                label="Sidebar Visível por Padrão" 
+                description="Mostrar sidebar ao carregar a página"
+              >
+                <Button
+                  variant={autoSave ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAutoSave(!autoSave)}
+                >
+                  {autoSave ? "Ativado" : "Desativado"}
+                </Button>
+              </SettingItem>
+              
+              <SettingItem 
+                label="Animações" 
+                description="Ativar animações de transição"
+              >
+                <Button
+                  variant={autoSave ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAutoSave(!autoSave)}
+                >
+                  {autoSave ? "Ativado" : "Desativado"}
+                </Button>
+              </SettingItem>
+            </SettingSection>
 
-        {/* Data & Privacy Settings */}
-        <SettingSection title="Dados e Privacidade" icon={Trash2} sectionKey="data">
-          <SettingItem 
-            label="Auto-save" 
-            description="Salvar automaticamente as configurações"
-          >
-            <Button
-              variant={autoSave ? "default" : "outline"}
-              size="sm"
-              onClick={() => setAutoSave(!autoSave)}
-            >
-              {autoSave ? "Ativado" : "Desativado"}
-            </Button>
-          </SettingItem>
-          
-          <SettingItem 
-            label="Limpar Dados Cache" 
-            description="Remove dados temporários do navegador"
-          >
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <Trash2 className="w-4 h-4" />
-              Limpar Cache
-            </Button>
-          </SettingItem>
-        </SettingSection>
+            {/* Notifications Settings */}
+            <SettingSection title="Notificações" icon={Bell} sectionKey="notifications">
+              <SettingItem 
+                label="Notificações do Sistema" 
+                description="Receber notificações sobre atualizações"
+              >
+                <Button
+                  variant={notifications ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setNotifications(!notifications)}
+                  className="flex items-center gap-2"
+                >
+                  {notifications ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+                  {notifications ? "Ativado" : "Desativado"}
+                </Button>
+              </SettingItem>
+              
+              <SettingItem 
+                label="Sons de Notificação" 
+                description="Reproduzir sons para notificações"
+              >
+                <Button
+                  variant={sound ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSound(!sound)}
+                  className="flex items-center gap-2"
+                >
+                  {sound ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                  {sound ? "Ativado" : "Desativado"}
+                </Button>
+              </SettingItem>
+            </SettingSection>
 
-        {/* Support Settings */}
-        <SettingSection title="Suporte" icon={HelpCircle} sectionKey="support">
-          <SettingItem 
-            label="Sobre" 
-            description="Informações sobre o Schema Explorer"
-          >
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <Info className="w-4 h-4" />
-              Ver Informações
-            </Button>
-          </SettingItem>
-          
-          <SettingItem 
-            label="Ajuda e Documentação" 
-            description="Acessar guias e tutoriais"
-          >
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <HelpCircle className="w-4 h-4" />
-              Abrir Ajuda
-            </Button>
-          </SettingItem>
-        </SettingSection>
+            {/* Data & Privacy Settings */}
+            <SettingSection title="Dados e Privacidade" icon={Trash2} sectionKey="data">
+              <SettingItem 
+                label="Auto-save" 
+                description="Salvar automaticamente as configurações"
+              >
+                <Button
+                  variant={autoSave ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAutoSave(!autoSave)}
+                >
+                  {autoSave ? "Ativado" : "Desativado"}
+                </Button>
+              </SettingItem>
+              
+              <SettingItem 
+                label="Limpar Dados Cache" 
+                description="Remove dados temporários do navegador"
+              >
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Trash2 className="w-4 h-4" />
+                  Limpar Cache
+                </Button>
+              </SettingItem>
+            </SettingSection>
 
-        {/* Save Button */}
-        <div className="flex justify-end gap-4 mt-8">
-          <Button variant="outline">
-            Cancelar
-          </Button>
-          <Button>
-            Salvar Configurações
-          </Button>
+            {/* Support Settings */}
+            <SettingSection title="Suporte" icon={HelpCircle} sectionKey="support">
+              <SettingItem 
+                label="Sobre" 
+                description="Informações sobre o Schema Explorer"
+              >
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Info className="w-4 h-4" />
+                  Ver Informações
+                </Button>
+              </SettingItem>
+              
+              <SettingItem 
+                label="Ajuda e Documentação" 
+                description="Acessar guias e tutoriais"
+              >
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4" />
+                  Abrir Ajuda
+                </Button>
+              </SettingItem>
+            </SettingSection>
+
+            {/* Save Button */}
+            <div className="flex justify-end gap-4 mt-8">
+              <Button variant="outline">
+                Cancelar
+              </Button>
+              <Button>
+                Salvar Configurações
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Global Sidebar Overlay */}
+      <GlobalSidebar 
+        isVisible={showSidebar} 
+        onClose={() => setShowSidebar(false)}
+        onRouteChange={handleRouteChange}
+      />
+
+      {/* Dock Navigation */}
+      <DockNavigation 
+        showSidebar={showSidebar} 
+        onToggleSidebar={toggleSidebar} 
+      />
     </div>
   );
 }
