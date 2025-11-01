@@ -23,7 +23,8 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <Link
               href="/"
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                pathname === "/" ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                !showMercantia && pathname === "/" ? "bg-gray-200 dark:bg-gray-700" : 
+                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : ""
               }`}
               aria-label="Home"
             >
@@ -35,7 +36,8 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <button
               onClick={onToggleSidebar}
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                showSidebar ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                !showMercantia && showSidebar ? "bg-gray-200 dark:bg-gray-700" : 
+                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : ""
               }`}
               aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
             >
@@ -47,7 +49,8 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <Link
               href="/demo"
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                pathname === "/demo" ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                !showMercantia && pathname === "/demo" ? "bg-gray-200 dark:bg-gray-700" : 
+                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : ""
               }`}
               aria-label="Demo"
             >
