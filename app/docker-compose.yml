@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  unsloth:
+    image: unsloth/unsloth:latest
+    platform: linux/amd64
+    container_name: unsloth-glm
+    stdin_open: true
+    tty: true
+    ports:
+      - "8888:8888"  # Jupyter Lab
+      - "2222:22"    # SSH
+    volumes:
+      - ./:/workspace
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    command: >
+      bash -c "
+        echo '========================================';
+        echo '🚀 Unsloth GLM-4.6 Container Started!';
+        echo '========================================';
+        echo '';
+        echo 'Jupyter Lab is running on:';
+        echo '  http://localhost:8888';
+        echo '';
+        echo 'SSH is available on:';
+        echo '  ssh -p 2222 unsloth@localhost';
+        echo '';
+        echo 'Workspace mounted at: /workspace';
+        echo '';
+        echo '========================================';
+        echo '';
+        supervisord -c /etc/supervisor/conf.d/supervisord.conf -n
+      "

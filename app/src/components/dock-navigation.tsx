@@ -25,13 +25,13 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
       <div className="fixed bottom-0 left-0 right-0 z-[60] flex justify-center mb-6">
         <Dock direction="middle" className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
           
-          {/* Home Icon - Independent state based only on current route */}
+          {/* Home Icon - Active only when not in Mercantia AND on home route */}
           <DockIcon>
             <Link
               href="/"
               onClick={handleHomeClick}
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                pathname === "/" ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                !showMercantia && pathname === "/" ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
               aria-label="Home"
             >
