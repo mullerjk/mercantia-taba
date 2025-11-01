@@ -25,7 +25,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-6">
               <span className="text-6xl mr-4">🌐</span>
               <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2">Thing (Root)</h1>
+                <h1 className="text-4xl font-bold mb-2 text-foreground">Thing (Root)</h1>
                 <Badge className="bg-primary text-primary-foreground">
                   Schema.org Root Class
                 </Badge>
@@ -42,7 +42,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-6">
               <span className="text-6xl mr-4">🧬</span>
               <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2">BioChemEntity</h1>
+                <h1 className="text-4xl font-bold mb-2 text-foreground">BioChemEntity</h1>
                 <Badge className="bg-primary text-primary-foreground">
                   Schema.org Type
                 </Badge>
@@ -59,7 +59,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-6">
               <span className="text-6xl mr-4">⚗️</span>
               <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2">ChemicalSubstance</h1>
+                <h1 className="text-4xl font-bold mb-2 text-foreground">ChemicalSubstance</h1>
                 <Badge className="bg-primary text-primary-foreground">
                   Schema.org Type
                 </Badge>
@@ -76,7 +76,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-6">
               <span className="text-6xl mr-4">⚡</span>
               <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2">Action</h1>
+                <h1 className="text-4xl font-bold mb-2 text-foreground">Action</h1>
                 <Badge className="bg-primary text-primary-foreground">
                   Schema.org Type
                 </Badge>
@@ -93,7 +93,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-6">
               <span className="text-6xl mr-4">🎨</span>
               <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2">CreativeWork</h1>
+                <h1 className="text-4xl font-bold mb-2 text-foreground">CreativeWork</h1>
                 <Badge className="bg-primary text-primary-foreground">
                   Schema.org Category
                 </Badge>
@@ -110,7 +110,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-6">
               <span className="text-6xl mr-4">🏢</span>
               <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2">Organization</h1>
+                <h1 className="text-4xl font-bold mb-2 text-foreground">Organization</h1>
                 <Badge className="bg-primary text-primary-foreground">
                   Schema.org Category
                 </Badge>
@@ -127,7 +127,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-6">
               <span className="text-6xl mr-4">❓</span>
               <div className="text-left">
-                <h1 className="text-4xl font-bold mb-2 capitalize">{currentRoute.replace('-', ' ')}</h1>
+                <h1 className="text-4xl font-bold mb-2 capitalize text-foreground">{currentRoute.replace('-', ' ')}</h1>
                 <Badge className="bg-primary text-primary-foreground">
                   Schema.org Entity
                 </Badge>
@@ -142,7 +142,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Main Content - full width, not pushed by sidebar */}
       <div className="relative w-full">
         <div className="min-h-screen flex items-center justify-center p-8">

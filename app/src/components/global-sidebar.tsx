@@ -46,13 +46,13 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[45] pointer-events-auto"
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[45] pointer-events-auto"
         onClick={onClose}
       />
       
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 h-full w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-[46] pointer-events-auto shadow-xl",
+        "fixed left-0 top-0 h-full w-80 bg-background border-r border-border z-[46] pointer-events-auto shadow-xl",
         "transform transition-transform duration-300 ease-in-out",
         isVisible ? "translate-x-0" : "-translate-x-full",
         className
@@ -60,15 +60,15 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
         <div className="h-full flex flex-col">
           
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold">Schema Explorer</h2>
+                <h2 className="text-lg font-semibold text-foreground">Schema Explorer</h2>
                 <p className="text-sm text-muted-foreground">Browse entities by type</p>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                className="p-2 hover:bg-secondary rounded-lg transition-colors"
                 aria-label="Close sidebar"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,7 +77,7 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
               </button>
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
-              Current: <code className="bg-muted px-1 rounded">{currentRoute}</code>
+              Current: <code className="bg-muted px-1 rounded text-foreground">{currentRoute}</code>
             </div>
           </div>
           
@@ -95,7 +95,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                   value="bio-entity" 
                   isSelectable={true} 
                   handleSelect={handleRouteChange}
-                  className={currentRoute === "bio-entity" ? "font-bold bg-muted" : ""}
+                  className={cn(
+                    "text-foreground",
+                    currentRoute === "bio-entity" ? "font-bold bg-secondary" : ""
+                  )}
                 >
                   BioChemEntity
                 </File>
@@ -104,7 +107,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                   value="chemical-substance" 
                   isSelectable={true} 
                   handleSelect={handleRouteChange}
-                  className={currentRoute === "chemical-substance" ? "font-bold bg-muted" : ""}
+                  className={cn(
+                    "text-foreground",
+                    currentRoute === "chemical-substance" ? "font-bold bg-secondary" : ""
+                  )}
                 >
                   ChemicalSubstance
                 </File>
@@ -113,7 +119,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                   value="action" 
                   isSelectable={true} 
                   handleSelect={handleRouteChange}
-                  className={currentRoute === "action" ? "font-bold bg-muted" : ""}
+                  className={cn(
+                    "text-foreground",
+                    currentRoute === "action" ? "font-bold bg-secondary" : ""
+                  )}
                 >
                   Action
                 </File>
@@ -129,7 +138,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="blog-posting" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "blog-posting" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "blog-posting" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     BlogPosting
                   </File>
@@ -137,7 +149,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="news-article" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "news-article" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "news-article" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     NewsArticle
                   </File>
@@ -145,7 +160,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="scholarly-article" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "scholarly-article" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "scholarly-article" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     ScholarlyArticle
                   </File>
@@ -153,7 +171,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="book" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "book" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "book" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     Book
                   </File>
@@ -161,7 +182,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="movie" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "movie" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "movie" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     Movie
                   </File>
@@ -178,7 +202,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="corporation" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "corporation" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "corporation" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     Corporation
                   </File>
@@ -186,7 +213,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="local-business" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "local-business" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "local-business" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     LocalBusiness
                   </File>
@@ -194,7 +224,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="nonprofit" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "nonprofit" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "nonprofit" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     NonprofitOrganization
                   </File>
@@ -211,7 +244,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="person-profile" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "person-profile" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "person-profile" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     Person Profile
                   </File>
@@ -228,7 +264,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="business-event" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "business-event" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "business-event" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     BusinessEvent
                   </File>
@@ -236,7 +275,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="festival" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "festival" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "festival" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     Festival
                   </File>
@@ -253,7 +295,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="software-app" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "software-app" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "software-app" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     SoftwareApplication
                   </File>
@@ -261,7 +306,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="vehicle" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "vehicle" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "vehicle" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     Vehicle
                   </File>
@@ -278,7 +326,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="administrative-area" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "administrative-area" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "administrative-area" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     AdministrativeArea
                   </File>
@@ -286,7 +337,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="residence" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "residence" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "residence" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     Residence
                   </File>
@@ -303,7 +357,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="brand" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "brand" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "brand" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     Brand
                   </File>
@@ -311,7 +368,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
                     value="service" 
                     isSelectable={true} 
                     handleSelect={handleRouteChange}
-                    className={currentRoute === "service" ? "font-bold bg-muted" : ""}
+                    className={cn(
+                      "text-foreground",
+                      currentRoute === "service" ? "font-bold bg-secondary" : ""
+                    )}
                   >
                     Service
                   </File>
