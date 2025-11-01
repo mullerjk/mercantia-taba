@@ -1,5 +1,4 @@
 import "./globals.css";
-import { DockNavigation } from "@/components/dock-navigation";
 
 export const metadata = {
   title: 'MagicUI Dock Demo',
@@ -15,7 +14,6 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-background">
         {children}
-        <DockNavigation />
       </body>
     </html>
   );
