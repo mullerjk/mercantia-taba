@@ -3,48 +3,151 @@
 import { useState } from "react";
 import { DockNavigation } from "@/components/dock-navigation";
 import { GlobalSidebar } from "@/components/global-sidebar";
+import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   const [showSidebar, setShowSidebar] = useState(false);
+  const [currentRoute, setCurrentRoute] = useState("thing");
 
   const toggleSidebar = () => {
     setShowSidebar(!showSidebar);
+  };
+
+  const handleRouteChange = (route: string) => {
+    setCurrentRoute(route);
+  };
+
+  const renderContent = () => {
+    switch (currentRoute) {
+      case "thing":
+        return (
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-6">
+              <span className="text-6xl mr-4">🌐</span>
+              <div className="text-left">
+                <h1 className="text-4xl font-bold mb-2">Thing (Root)</h1>
+                <Badge className="bg-primary text-primary-foreground">
+                  Schema.org Root Class
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              The most generic type of item. All other Schema.org types are descendants of this type.
+            </p>
+          </div>
+        );
+      case "bio-entity":
+        return (
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-6">
+              <span className="text-6xl mr-4">🧬</span>
+              <div className="text-left">
+                <h1 className="text-4xl font-bold mb-2">BioChemEntity</h1>
+                <Badge className="bg-primary text-primary-foreground">
+                  Schema.org Type
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Biological or chemical entities including proteins, DNA, RNA, and chemical compounds
+            </p>
+          </div>
+        );
+      case "chemical-substance":
+        return (
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-6">
+              <span className="text-6xl mr-4">⚗️</span>
+              <div className="text-left">
+                <h1 className="text-4xl font-bold mb-2">ChemicalSubstance</h1>
+                <Badge className="bg-primary text-primary-foreground">
+                  Schema.org Type
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Chemical compounds and substances
+            </p>
+          </div>
+        );
+      case "action":
+        return (
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-6">
+              <span className="text-6xl mr-4">⚡</span>
+              <div className="text-left">
+                <h1 className="text-4xl font-bold mb-2">Action</h1>
+                <Badge className="bg-primary text-primary-foreground">
+                  Schema.org Type
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Actions performed by agents
+            </p>
+          </div>
+        );
+      case "creative-work":
+        return (
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-6">
+              <span className="text-6xl mr-4">🎨</span>
+              <div className="text-left">
+                <h1 className="text-4xl font-bold mb-2">CreativeWork</h1>
+                <Badge className="bg-primary text-primary-foreground">
+                  Schema.org Category
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Creative works including books, movies, music, and art
+            </p>
+          </div>
+        );
+      case "organization":
+        return (
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-6">
+              <span className="text-6xl mr-4">🏢</span>
+              <div className="text-left">
+                <h1 className="text-4xl font-bold mb-2">Organization</h1>
+                <Badge className="bg-primary text-primary-foreground">
+                  Schema.org Category
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Organizations, companies, and institutions
+            </p>
+          </div>
+        );
+      default:
+        return (
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-6">
+              <span className="text-6xl mr-4">❓</span>
+              <div className="text-left">
+                <h1 className="text-4xl font-bold mb-2 capitalize">{currentRoute.replace('-', ' ')}</h1>
+                <Badge className="bg-primary text-primary-foreground">
+                  Schema.org Entity
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Explore this Schema.org entity type
+            </p>
+          </div>
+        );
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Main Content - full width, not pushed by sidebar */}
       <div className="relative w-full">
-        <h1 className="text-4xl font-bold text-center py-8">Welcome to Schema Explorer</h1>
-        <p className="text-center text-muted-foreground mb-8">
-          Explore Schema.org entities and types
-        </p>
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="p-6 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">CreativeWork</h3>
-              <p className="text-sm text-muted-foreground">Books, movies, articles, and more</p>
-            </div>
-            <div className="p-6 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">Organization</h3>
-              <p className="text-sm text-muted-foreground">Companies, businesses, and institutions</p>
-            </div>
-            <div className="p-6 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">Person</h3>
-              <p className="text-sm text-muted-foreground">Individual people and profiles</p>
-            </div>
-            <div className="p-6 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">Event</h3>
-              <p className="text-sm text-muted-foreground">Conferences, festivals, and gatherings</p>
-            </div>
-            <div className="p-6 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">Product</h3>
-              <p className="text-sm text-muted-foreground">Goods, services, and software</p>
-            </div>
-            <div className="p-6 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">Place</h3>
-              <p className="text-sm text-muted-foreground">Locations and geographical features</p>
-            </div>
+        <div className="min-h-screen flex items-center justify-center p-8">
+          <div className="w-full max-w-4xl">
+            {renderContent()}
           </div>
         </div>
       </div>
@@ -52,7 +155,8 @@ export default function Home() {
       {/* Global Sidebar Overlay - positioned above content but below dock */}
       <GlobalSidebar 
         isVisible={showSidebar} 
-        onClose={() => setShowSidebar(false)} 
+        onClose={() => setShowSidebar(false)}
+        onRouteChange={handleRouteChange}
       />
 
       {/* Dock Navigation - stays on top of everything */}

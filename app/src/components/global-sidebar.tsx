@@ -8,10 +8,11 @@ import { cn } from "@/lib/utils";
 interface GlobalSidebarProps {
   isVisible: boolean;
   onClose: () => void;
+  onRouteChange: (route: string) => void;
   className?: string;
 }
 
-export function GlobalSidebar({ isVisible, onClose, className }: GlobalSidebarProps) {
+export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: GlobalSidebarProps) {
   const [currentRoute, setCurrentRoute] = useState<string>("thing");
 
   // Handle escape key
@@ -36,6 +37,7 @@ export function GlobalSidebar({ isVisible, onClose, className }: GlobalSidebarPr
 
   const handleRouteChange = (route: string) => {
     setCurrentRoute(route);
+    onRouteChange(route);
   };
 
   if (!isVisible) return null;
