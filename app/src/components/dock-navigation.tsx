@@ -1,7 +1,7 @@
 "use client";
 
 import { Dock, DockIcon } from "@/components/magicui/dock";
-import { Home, FileText, Trees, ShoppingBag } from "lucide-react";
+import { Home, Trees, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -43,19 +43,6 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             >
               <Trees className="w-4 h-4" />
             </button>
-          </DockIcon>
-
-          <DockIcon>
-            <Link
-              href="/demo"
-              className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                !showMercantia && pathname === "/demo" ? "bg-gray-200 dark:bg-gray-700" : 
-                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : ""
-              }`}
-              aria-label="Demo"
-            >
-              <FileText className="w-4 h-4" />
-            </Link>
           </DockIcon>
 
           <DockIcon>
