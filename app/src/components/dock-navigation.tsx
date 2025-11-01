@@ -4,6 +4,7 @@ import { Dock, DockIcon } from "@/components/magicui/dock";
 import { Home, FileText, Trees, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 interface DockNavigationProps {
   showSidebar: boolean;
@@ -12,6 +13,7 @@ interface DockNavigationProps {
 
 export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationProps) {
   const pathname = usePathname();
+  const [showMercantia, setShowMercantia] = useState(false);
 
   return (
     <>
@@ -55,6 +57,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
 
           <DockIcon>
             <button
+              onClick={() => setShowMercantia(!showMercantia)}
               className="flex size-12 rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
               aria-label="Shopping Cart"
             >
@@ -63,6 +66,16 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
           </DockIcon>
         </Dock>
       </div>
+
+      {/* Mercantia Full Screen Iframe */}
+      {showMercantia && (
+        <iframe 
+          src="https://mercantia.app"
+          className="fixed inset-0 w-full h-full border-0 z-[50] bg-white"
+          title="Mercantia Marketplace"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        />
+      )}
     </>
   );
 }
