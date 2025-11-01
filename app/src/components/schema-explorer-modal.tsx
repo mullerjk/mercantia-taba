@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { X } from "lucide-react"
+import { X, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { Card } from "./ui/card"
 import { Button } from "./ui/button"
 import EntityNavigator from "./magicui/entity-navigator"
@@ -9,15 +9,22 @@ import EntityNavigator from "./magicui/entity-navigator"
 interface SchemaExplorerModalProps {
   isOpen: boolean
   onClose: () => void
+  showSidebar?: boolean
 }
 
-export default function SchemaExplorerModal({ isOpen, onClose }: SchemaExplorerModalProps) {
+export default function SchemaExplorerModal({ isOpen, onClose, showSidebar = true }: SchemaExplorerModalProps) {
   if (!isOpen) return null
+
+  const [isSidebarVisible, setIsSidebarVisible] = useState(showSidebar)
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose()
     }
+  }
+
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible)
   }
 
   return (
@@ -34,20 +41,36 @@ export default function SchemaExplorerModal({ isOpen, onClose }: SchemaExplorerM
               Navigate through Schema.org entities and types
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleSidebar}
+              className="h-8 w-8 p-0"
+              title={isSidebarVisible ? "Hide Sidebar" : "Show Sidebar"}
+            >
+              {isSidebarVisible ? (
+                <PanelLeftClose className="h-4 w-4" />
+              ) : (
+                <PanelLeftOpen className="h-4 w-4" />
+              )}
+              <span className="sr-only">Toggle Sidebar</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
-          <EntityNavigator />
+          <EntityNavigator showSidebar={isSidebarVisible} />
         </div>
       </Card>
     </div>
