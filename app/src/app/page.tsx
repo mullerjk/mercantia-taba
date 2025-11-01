@@ -15,6 +15,11 @@ export default function HomePage() {
 
   return (
     <>
+      {/* Debug indicator */}
+      <div className="fixed top-4 left-4 z-50 bg-blue-500 text-white px-4 py-2 rounded">
+        Sidebar Visible: {showSidebar ? 'YES' : 'NO'}
+      </div>
+      
       <EntityNavigator 
         entities={mockSchemaData} 
         showSidebar={showSidebar} 
