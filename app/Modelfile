@@ -1,0 +1,4 @@
+FROM unsloth/glm-4.6-9b-q4
+
+PARAMETER temperature 0.7
+PARAMETER top_p 0.9

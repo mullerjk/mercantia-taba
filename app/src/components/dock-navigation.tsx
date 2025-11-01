@@ -15,16 +15,23 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
   const pathname = usePathname();
   const [showMercantia, setShowMercantia] = useState(false);
 
+  // Handle Home navigation - always closes Mercantia and goes to home
+  const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    setShowMercantia(false);
+  };
+
   return (
     <>
       <div className="fixed bottom-0 left-0 right-0 z-[60] flex justify-center mb-6">
         <Dock direction="middle" className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+          
+          {/* Home Icon - Independent state based only on current route */}
           <DockIcon>
             <Link
               href="/"
+              onClick={handleHomeClick}
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                !showMercantia && pathname === "/" ? "bg-gray-200 dark:bg-gray-700" : 
-                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : "bg-gray-200 dark:bg-gray-700"
+                pathname === "/" ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
               aria-label="Home"
             >
@@ -32,12 +39,12 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             </Link>
           </DockIcon>
 
+          {/* Sidebar Toggle Icon - Independent state based only on showSidebar prop */}
           <DockIcon>
             <button
               onClick={onToggleSidebar}
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                !showMercantia && showSidebar ? "bg-gray-200 dark:bg-gray-700" : 
-                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : "bg-gray-200 dark:bg-gray-700"
+                showSidebar ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
               aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
             >
@@ -45,6 +52,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             </button>
           </DockIcon>
 
+          {/* ShoppingBag Icon - Independent state based only on showMercantia state */}
           <DockIcon>
             <button
               onClick={() => setShowMercantia(!showMercantia)}
@@ -56,10 +64,11 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               <ShoppingBag className="w-4 h-4" />
             </button>
           </DockIcon>
+
         </Dock>
       </div>
 
-      {/* Mercantia Full Screen Iframe */}
+      {/* Mercantia Full Screen Iframe - Independent overlay */}
       {showMercantia && (
         <iframe 
           src="https://mercantia.app"
