@@ -17,7 +17,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
           <DockIcon>
             <Link
               href="/"
-              className="flex size-12 rounded-full items-center justify-center bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+              className="flex size-12 rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
               aria-label="Home"
             >
               <Home className="w-4 h-4" />
@@ -27,7 +27,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
           <DockIcon>
             <button
               onClick={onToggleSidebar}
-              className="flex size-12 rounded-full items-center justify-center bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+              className="flex size-12 rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
               aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
             >
               <Trees className="w-4 h-4" />
@@ -37,7 +37,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
           <DockIcon>
             <Link
               href="/demo"
-              className="flex size-12 rounded-full items-center justify-center bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+              className="flex size-12 rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
               aria-label="Demo"
             >
               <FileText className="w-4 h-4" />
@@ -46,7 +46,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
 
           <DockIcon>
             <button
-              className="flex size-12 rounded-full items-center justify-center bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+              className="flex size-12 rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
               aria-label="Shopping Cart"
             >
               <ShoppingBag className="w-4 h-4" />
