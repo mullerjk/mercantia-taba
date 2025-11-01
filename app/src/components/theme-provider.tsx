@@ -35,6 +35,7 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement;
 
+    // Remove both light and dark classes
     root.classList.remove("light", "dark");
 
     if (theme === "system") {
@@ -43,11 +44,18 @@ export function ThemeProvider({
         ? "dark"
         : "light";
 
-      root.classList.add(systemTheme);
+      // Only add 'dark' class for dark themes
+      if (systemTheme === "dark") {
+        root.classList.add("dark");
+      }
       return;
     }
 
-    root.classList.add(theme);
+    // For explicit themes, only add 'dark' class for dark theme
+    if (theme === "dark") {
+      root.classList.add("dark");
+    }
+    // For light theme, don't add any class (default state)
   }, [theme]);
 
   const value = {

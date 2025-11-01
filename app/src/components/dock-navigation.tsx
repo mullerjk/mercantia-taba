@@ -23,7 +23,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
   return (
     <>
       <div className="fixed bottom-0 left-0 right-0 z-[60] flex justify-center mb-6">
-        <Dock direction="middle" className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+        <Dock direction="middle" className="bg-background border border-border">
           
           {/* Home Icon - Active only when not in Mercantia AND on home route */}
           <DockIcon>
@@ -31,7 +31,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               href="/"
               onClick={handleHomeClick}
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                !showMercantia && pathname === "/" ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                !showMercantia && pathname === "/" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary/50"
               }`}
               aria-label="Home"
             >
@@ -44,7 +44,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <button
               onClick={onToggleSidebar}
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                showSidebar ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                showSidebar ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary/50"
               }`}
               aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
             >
@@ -57,7 +57,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <button
               onClick={() => setShowMercantia(!showMercantia)}
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                showMercantia ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                showMercantia ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary/50"
               }`}
               aria-label="Shopping Cart"
             >
@@ -67,7 +67,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
 
           {/* Separator */}
           <div className="flex items-center px-2">
-            <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>
+            <div className="w-px h-8 bg-border"></div>
           </div>
 
           {/* Settings Icon */}
@@ -75,7 +75,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <Link
               href="/settings"
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                pathname === "/settings" ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                pathname === "/settings" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary/50"
               }`}
               aria-label="Settings"
             >
@@ -90,7 +90,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
       {showMercantia && (
         <iframe 
           src="https://mercantia.app"
-          className="fixed inset-0 w-full h-full border-0 z-[40] bg-white"
+          className="fixed inset-0 w-full h-full border-0 z-[40] bg-background"
           title="Mercantia Marketplace"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
