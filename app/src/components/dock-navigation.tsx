@@ -24,7 +24,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               href="/"
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
                 !showMercantia && pathname === "/" ? "bg-gray-200 dark:bg-gray-700" : 
-                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : ""
+                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : "bg-gray-200 dark:bg-gray-700"
               }`}
               aria-label="Home"
             >
@@ -37,7 +37,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               onClick={onToggleSidebar}
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
                 !showMercantia && showSidebar ? "bg-gray-200 dark:bg-gray-700" : 
-                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : ""
+                !showMercantia ? "hover:bg-gray-100 dark:hover:bg-gray-800" : "bg-gray-200 dark:bg-gray-700"
               }`}
               aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
             >
@@ -63,7 +63,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
       {showMercantia && (
         <iframe 
           src="https://mercantia.app"
-          className="fixed inset-0 w-full h-full border-0 z-[50] bg-white"
+          className="fixed inset-0 w-full h-full border-0 z-[40] bg-white"
           title="Mercantia Marketplace"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
