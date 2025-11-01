@@ -335,16 +335,6 @@ export default function SettingsPage() {
                 </Button>
               </SettingItem>
             </SettingSection>
-
-            {/* Save Button */}
-            <div className="flex justify-end gap-4 mt-8">
-              <Button variant="outline">
-                Cancelar
-              </Button>
-              <Button>
-                Salvar Configurações
-              </Button>
-            </div>
           </div>
         </div>
       </div>
