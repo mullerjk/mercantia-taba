@@ -19,13 +19,13 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
       {showMercantia && (
         <iframe 
           src="https://mercantia.app"
-          className="fixed inset-0 w-full h-full border-0 z-[60] bg-white"
+          className="fixed inset-0 w-full h-full border-0 z-[50] bg-white"
           title="Mercantia Marketplace"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
       )}
       
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center mb-6">
+      <div className="fixed bottom-0 left-0 right-0 z-[60] flex justify-center mb-6">
         <Dock direction="middle">
           <DockIcon>
             <Link
