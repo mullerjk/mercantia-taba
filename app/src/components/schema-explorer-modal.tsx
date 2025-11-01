@@ -36,7 +36,7 @@ export default function SchemaExplorerModal({ isOpen, onClose, showSidebar = tru
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h2 className="text-xl font-semibold">Schema Explorer</h2>
+            <h2 className="text-xl font-semibold">World Explorer</h2>
             <p className="text-sm text-muted-foreground">
               Navigate through Schema.org entities and types
             </p>

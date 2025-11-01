@@ -317,7 +317,7 @@ export default function SettingsPage() {
             <SettingSection title="Suporte" icon={HelpCircle} sectionKey="support">
               <SettingItem 
                 label="Sobre" 
-                description="Informações sobre o Schema Explorer"
+                description="Informações sobre o World Explorer"
               >
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                   <Info className="w-4 h-4" />

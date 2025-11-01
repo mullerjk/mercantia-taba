@@ -2,8 +2,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata = {
-  title: 'MagicUI Dock Demo',
-  description: 'Interactive dock component with magnification effects',
+  title: 'World Explorer - Mercantia TABA',
+  description: 'Explore schema.org entities with interactive UI and MCP integration',
 };
 
 export default function RootLayout({

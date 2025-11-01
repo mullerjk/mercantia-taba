@@ -63,7 +63,7 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Schema Explorer</h2>
+                <h2 className="text-lg font-semibold text-foreground">World Explorer</h2>
                 <p className="text-sm text-muted-foreground">Browse entities by type</p>
               </div>
               <button

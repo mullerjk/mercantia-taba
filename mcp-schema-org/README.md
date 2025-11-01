@@ -1,6 +1,6 @@
 # Schema.org MCP Server
 
-MCP (Model Context Protocol) server integrado ao Mercantia TABA Schema Explorer, proporcionando acesso completo ao vocabulário schema.org para dados estruturados.
+MCP (Model Context Protocol) server integrado ao Mercantia TABA World Explorer, proporcionando acesso completo ao vocabulário schema.org para dados estruturados.
 
 ## 🚀 Funcionalidades
 
