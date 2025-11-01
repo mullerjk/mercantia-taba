@@ -3,7 +3,8 @@
 - [x] Adicionar regras específicas para Node.js/Next.js
 - [x] Adicionar regras específicas para pnpm workspace
 - [x] Adicionar regras para Magic UI e app folders
-- [x] Adicionar botão toggle no Schema Explorer Modal
-- [x] Implementar controle de visibilidade do sidebar
-- [x] Adicionar ícones PanelLeftClose e PanelLeftOpen
+- [x] Remover SchemaExplorerModal popup
+- [x] Implementar toggle na sidebar principal da home
+- [x] Atualizar DockNavigation para controlar sidebar state
+- [x] Adicionar estado local na HomePage
 - [x] Fazer commit e push das alterações

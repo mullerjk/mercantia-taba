@@ -27,7 +27,10 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
           {/* Schema Explorer Toggle */}
           <DockIcon>
             <button
-              onClick={onToggleSidebar}
+              onClick={() => {
+                console.log('Toggle button clicked');
+                onToggleSidebar();
+              }}
               className="flex size-12 rounded-full items-center justify-center hover:bg-muted transition-colors"
               aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
               title={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
