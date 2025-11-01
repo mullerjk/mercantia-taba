@@ -18,12 +18,12 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
   return (
     <>
       <div className="fixed bottom-0 left-0 right-0 z-[60] flex justify-center mb-6">
-        <Dock direction="middle">
+        <Dock direction="middle" className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
           <DockIcon>
             <Link
               href="/"
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                pathname === "/" ? "bg-gray-50" : "hover:bg-gray-50"
+                pathname === "/" ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
               aria-label="Home"
             >
@@ -35,7 +35,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <button
               onClick={onToggleSidebar}
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                showSidebar ? "bg-gray-50" : "hover:bg-gray-50"
+                showSidebar ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
               aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
             >
@@ -47,7 +47,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <Link
               href="/demo"
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                pathname === "/demo" ? "bg-gray-50" : "hover:bg-gray-50"
+                pathname === "/demo" ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
               }`}
               aria-label="Demo"
             >
@@ -58,7 +58,9 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
           <DockIcon>
             <button
               onClick={() => setShowMercantia(!showMercantia)}
-              className="flex size-12 rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
+              className={`flex size-12 rounded-full items-center justify-center transition-colors ${
+                showMercantia ? "bg-gray-200 dark:bg-gray-700" : "hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
               aria-label="Shopping Cart"
             >
               <ShoppingBag className="w-4 h-4" />
