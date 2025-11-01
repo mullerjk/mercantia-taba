@@ -21,7 +21,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <Link
               href="/"
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                pathname === "/" ? "bg-gray-200" : "hover:bg-gray-50"
+                pathname === "/" ? "bg-gray-50" : "hover:bg-gray-50"
               }`}
               aria-label="Home"
             >
@@ -32,7 +32,9 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
           <DockIcon>
             <button
               onClick={onToggleSidebar}
-              className="flex size-12 rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
+              className={`flex size-12 rounded-full items-center justify-center transition-colors ${
+                showSidebar ? "bg-gray-50" : "hover:bg-gray-50"
+              }`}
               aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
             >
               <Trees className="w-4 h-4" />
@@ -43,7 +45,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <Link
               href="/demo"
               className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                pathname === "/demo" ? "bg-gray-200" : "hover:bg-gray-50"
+                pathname === "/demo" ? "bg-gray-50" : "hover:bg-gray-50"
               }`}
               aria-label="Demo"
             >
