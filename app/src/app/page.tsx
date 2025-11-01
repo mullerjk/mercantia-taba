@@ -9,7 +9,6 @@ export default function HomePage() {
   const [showSidebar, setShowSidebar] = useState(true);
 
   const toggleSidebar = () => {
-    alert('Toggle clicked! Current state: ' + showSidebar);
     setShowSidebar(!showSidebar);
   };
 
