@@ -4,7 +4,7 @@ import { Dock, DockIcon } from "../../components/magicui/dock"
 import { Marquee } from "../../components/magicui/marquee"
 import BlurFade from "../../components/magicui/blur-fade"
 import { FlickeringGrid } from "../../components/magicui/flickering-grid"
-import { FileText, Image, Settings, Home, User, Mail } from "lucide-react"
+import { FileText, Settings, Home, User, Mail } from "lucide-react"
 
 export default function MagicUIDemo() {
   return (

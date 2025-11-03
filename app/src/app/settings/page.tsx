@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DockNavigation } from "@/components/dock-navigation";
-import { GlobalSidebar } from "@/components/global-sidebar";
+import { SchemaOrgExplorer } from "@/components/schema-org-explorer";
 import { useTheme } from "@/components/theme-provider";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { 
   Settings as SettingsIcon, 
   Globe, 
@@ -92,7 +93,7 @@ export default function SettingsPage() {
     children 
   }: { 
     title: string; 
-    icon: any; 
+    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; 
     sectionKey: string; 
     children: React.ReactNode; 
   }) => (
@@ -176,7 +177,7 @@ export default function SettingsPage() {
                         key={themeOption.value}
                         variant={theme === themeOption.value ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setTheme(themeOption.value as any)}
+                        onClick={() => setTheme(themeOption.value as ThemeType)}
                         className="flex items-center gap-2"
                       >
                         <IconComponent className="w-4 h-4" />
@@ -339,12 +340,22 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Global Sidebar Overlay */}
-      <GlobalSidebar 
-        isVisible={showSidebar} 
-        onClose={() => setShowSidebar(false)}
-        onRouteChange={handleRouteChange}
-      />
+      {/* Schema.org Explorer Sidebar */}
+      <Sheet open={showSidebar} onOpenChange={setShowSidebar}>
+        <SheetContent side="left" className="w-full sm:max-w-2xl overflow-auto">
+          <SheetHeader>
+            <SheetTitle>Schema.org Explorer</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <SchemaOrgExplorer 
+              onEntitySelect={(name) => {
+                handleRouteChange(name);
+                setShowSidebar(false);
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Dock Navigation */}
       <DockNavigation 

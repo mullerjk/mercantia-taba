@@ -18,7 +18,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
   const [showMercantia, setShowMercantia] = useState(false);
 
   // Handle Home navigation - always closes Mercantia and goes to home
-  const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleHomeClick = () => {
     setShowMercantia(false);
   };
 

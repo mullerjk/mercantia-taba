@@ -49,6 +49,7 @@ type TreeViewProps = {
   initialExpandedItems?: string[]
   openIcon?: React.ReactNode
   closeIcon?: React.ReactNode
+  onSelectChange?: (id: string) => void
 } & React.HTMLAttributes<HTMLDivElement>
 
 const Tree = forwardRef<HTMLDivElement, TreeViewProps>(
@@ -63,9 +64,9 @@ const Tree = forwardRef<HTMLDivElement, TreeViewProps>(
       openIcon,
       closeIcon,
       dir,
+      onSelectChange,
       ...props
-    },
-    ref
+    }
   ) => {
     const [selectedId, setSelectedId] = useState<string | undefined>(
       initialSelectedId
@@ -76,7 +77,8 @@ const Tree = forwardRef<HTMLDivElement, TreeViewProps>(
 
     const selectItem = useCallback((id: string) => {
       setSelectedId(id)
-    }, [])
+      onSelectChange?.(id)
+    }, [onSelectChange])
 
     const handleExpand = useCallback((id: string) => {
       setExpandedItems((prev) => {
@@ -128,8 +130,6 @@ const Tree = forwardRef<HTMLDivElement, TreeViewProps>(
       }
     }, [initialSelectedId, elements, expandSpecificTargetedElements])
 
-    const direction = dir === "rtl" ? "rtl" : "ltr"
-
     return (
       <TreeContext.Provider
         value={{
@@ -141,13 +141,12 @@ const Tree = forwardRef<HTMLDivElement, TreeViewProps>(
           indicator,
           openIcon,
           closeIcon,
-          direction,
+          direction: dir === "rtl" ? "rtl" : "ltr",
         }}
       >
         <div className={cn("size-full", className)}>
           <div className="relative h-full overflow-hidden">
             <AccordionPrimitive.Root
-              {...props}
               type="multiple"
               className="flex flex-col gap-1"
               value={expandedItems}
@@ -179,7 +178,6 @@ const TreeIndicator = forwardRef<
         "bg-muted absolute left-1.5 h-full w-px rounded-md py-3 duration-300 ease-in-out hover:bg-slate-300 rtl:right-1.5",
         className
       )}
-      {...props}
     />
   )
 })
@@ -207,12 +205,11 @@ const Folder = forwardRef<
       isSelect,
       children,
       handleSelect,
-      ...props
+      ..._props
     },
     ref
   ) => {
     const {
-      direction,
       expandedItems,
       indicator,
       openIcon,
@@ -223,7 +220,8 @@ const Folder = forwardRef<
 
     return (
       <AccordionPrimitive.Item
-        {...props}
+        ref={ref}
+        {..._props}
         value={value}
         className="relative"
       >
@@ -239,7 +237,7 @@ const Folder = forwardRef<
             }
           )}
           disabled={!isSelectable}
-          onClick={(e) => {
+          onClick={() => {
             if (handleSelect) {
               handleSelect(value)
             }
@@ -286,7 +284,7 @@ const File = forwardRef<
     },
     ref
   ) => {
-    const { direction, selectedId, selectItem } = useTree()
+    const { selectedId, selectItem } = useTree()
     const isSelected = isSelect ?? selectedId === value
     
     return (
@@ -330,7 +328,7 @@ const CollapseButton = forwardRef<
     elements: TreeViewElement[]
     expandAll?: boolean
   } & React.HTMLAttributes<HTMLButtonElement>
->(({ className, elements, expandAll = false, children, ...props }, ref) => {
+>(({ elements, expandAll = false, children }, props) => {
   const { expandedItems, setExpandedItems } = useTree()
 
   const expandAllTree = useCallback((elements: TreeViewElement[]) => {
@@ -342,13 +340,11 @@ const CollapseButton = forwardRef<
       }
     }
     elements.forEach(expandTree)
-  }, [])
+  }, [setExpandedItems])
 
   const closeAll = useCallback(() => {
-    {
-      setExpandedItems([])
-    }
-  }, [])
+    setExpandedItems([])
+  }, [setExpandedItems])
 
   React.useEffect(() => {
     if (expandAll) {
@@ -365,7 +361,6 @@ const CollapseButton = forwardRef<
           ? closeAll
           : () => expandAllTree(elements)
       }
-      ref={ref}
       {...props}
     >
       {children}

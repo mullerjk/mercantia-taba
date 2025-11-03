@@ -17,7 +17,7 @@ export interface SchemaEntity {
   name: string
   type: string // Permitir qualquer string para maior flexibilidade
   fields: SchemaField[]
-  examples?: any[]
+  examples?: unknown[]
 }
 
 // MagicUI component mapping based on data characteristics
@@ -88,7 +88,7 @@ export class LayoutGenerator {
     return recommendations
   }
 
-  static generateLayout(entity: SchemaEntity, data?: any) {
+  static generateLayout(entity: SchemaEntity, data?: unknown) {
     const recommendations = this.recommendUI(entity)
     const bestRecommendation = recommendations[0] || {
       component: 'blur-fade' as const,
@@ -108,8 +108,8 @@ export class LayoutGenerator {
   private static getLayoutConfig(
     recommendation: UIRecommendation,
     entity: SchemaEntity,
-    data?: any
-  ): any {
+    data?: unknown
+  ): unknown {
     switch (recommendation.component) {
       case 'animated-list':
         return {

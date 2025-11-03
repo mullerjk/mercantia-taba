@@ -1,0 +1,47 @@
+{
+  "mcpServers": {
+    "schema-org": {
+      "command": "node",
+      "args": ["mcp-schema-org/dist/index.js"],
+      "cwd": "/Users/antoniomuller/Sites/taba",
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info"
+      },
+      "description": "Schema.org MCP Server - Single source of truth for Schema.org data"
+    }
+  },
+  "commands": {
+    "build-mcp": {
+      "title": "Build MCP Server",
+      "command": "bash",
+      "args": ["-c", "cd mcp-schema-org && npm run build"],
+      "description": "Builds the Schema.org MCP server TypeScript files"
+    },
+    "start-mcp": {
+      "title": "Start MCP Server",
+      "command": "bash",
+      "args": ["./start-mcp-server.sh"],
+      "description": "Starts the Schema.org MCP server in development mode"
+    },
+    "test-mcp": {
+      "title": "Test MCP Integration",
+      "command": "bash",
+      "args": ["./test-integration.sh"],
+      "description": "Tests the complete MCP integration with Schema.org hierarchy"
+    }
+  },
+  "settings": {
+    "autoStartMCP": true,
+    "enableMCPLogging": true,
+    "schemaOrgHierarchyRoot": "Thing",
+    "cacheTimeout": 300000,
+    "retryAttempts": 3,
+    "maxDepth": 4
+  },
+  "documentation": {
+    "schemaOrgStructure": "The application uses MCP as the single source of Schema.org data. Hierarchy starts from Thing as the root.",
+    "mcpServer": "Located in /mcp-schema-org - provides tools for querying Schema.org vocabulary",
+    "integration": "MCPProvider in app/src/components/mcp-provider.tsx initializes MCP on app startup"
+  }
+}

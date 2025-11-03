@@ -1,23 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { DockNavigation } from "@/components/dock-navigation";
-import { GlobalSidebar } from "@/components/global-sidebar";
 import { Badge } from "@/components/ui/badge";
 import { RainbowButton } from "@/components/ui/rainbow-button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 
 export default function Home() {
-  const [showSidebar, setShowSidebar] = useState(false);
   const [currentRoute, setCurrentRoute] = useState("thing");
-
-  const toggleSidebar = () => {
-    setShowSidebar(!showSidebar);
-  };
-
-  const handleRouteChange = (route: string) => {
-    setCurrentRoute(route);
-  };
 
   const renderContent = () => {
     switch (currentRoute) {
@@ -206,7 +195,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Main Content - full width, not pushed by sidebar */}
+      {/* Main Content */}
       <div className="relative w-full">
         <div className="min-h-screen flex items-center justify-center p-8">
           <div className="w-full max-w-4xl">
@@ -214,19 +203,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      {/* Global Sidebar Overlay - positioned above content but below dock */}
-      <GlobalSidebar 
-        isVisible={showSidebar} 
-        onClose={() => setShowSidebar(false)}
-        onRouteChange={handleRouteChange}
-      />
-
-      {/* Dock Navigation - stays on top of everything */}
-      <DockNavigation 
-        showSidebar={showSidebar} 
-        onToggleSidebar={toggleSidebar} 
-      />
     </div>
   );
 }
