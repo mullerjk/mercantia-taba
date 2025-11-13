@@ -3,17 +3,20 @@
 import React, { useState, useEffect } from "react";
 import { SchemaExplorerTree } from "./schema-explorer-tree";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/contexts/TranslationContext";
 
 interface GlobalSidebarProps {
   isVisible: boolean;
   onClose: () => void;
   onRouteChange: (route: string) => void;
+  onEntitySelect?: (entityName: string) => void;
   className?: string;
 }
 
-export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: GlobalSidebarProps) {
+export function GlobalSidebar({ isVisible, onClose, onRouteChange, onEntitySelect, className }: GlobalSidebarProps) {
   const [currentRoute, setCurrentRoute] = useState<string>("thing");
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   // Handle escape key
   useEffect(() => {
@@ -36,9 +39,15 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
   }, [isVisible, onClose]);
 
   const handleEntitySelect = (entityName: string) => {
+    console.log("GlobalSidebar: Entity selected:", entityName);
     setSelectedEntity(entityName);
     setCurrentRoute(entityName);
     onRouteChange(entityName);
+    // Call the parent's entity select handler
+    if (onEntitySelect) {
+      console.log("GlobalSidebar: Calling parent onEntitySelect with:", entityName);
+      onEntitySelect(entityName);
+    }
   };
 
   if (!isVisible) return null;
@@ -46,10 +55,13 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
   return (
     <>
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[45] pointer-events-auto"
+      <div
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[45] pointer-events-none"
         onClick={onClose}
-      />
+      >
+        {/* Clickable overlay that doesn't interfere with sidebar scroll */}
+        <div className="absolute inset-0 pointer-events-auto" onClick={onClose} />
+      </div>
       
       {/* Sidebar */}
       <div className={cn(
@@ -62,11 +74,7 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
           
           {/* Header */}
           <div className="p-4 border-b border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">World Explorer</h2>
-                <p className="text-sm text-muted-foreground">Browse entities by type</p>
-              </div>
+            <div className="flex items-center justify-end">
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-secondary rounded-lg transition-colors"
@@ -78,10 +86,10 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, className }: 
               </button>
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
-              Current: <code className="bg-muted px-1 rounded text-foreground">{currentRoute}</code>
+              {t('sidebar.current')} <code className="bg-muted px-1 rounded text-foreground">{currentRoute}</code>
               {selectedEntity && (
                 <div className="mt-1">
-                  Selected: <code className="bg-secondary px-1 rounded text-foreground">{selectedEntity}</code>
+                  {t('sidebar.selected')} <code className="bg-secondary px-1 rounded text-foreground">{selectedEntity}</code>
                 </div>
               )}
             </div>

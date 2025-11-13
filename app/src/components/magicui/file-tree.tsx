@@ -147,7 +147,6 @@ const Tree = forwardRef<HTMLDivElement, TreeViewProps>(
         <div className={cn("size-full", className)}>
           <div className="relative h-full overflow-hidden">
             <AccordionPrimitive.Root
-              {...props}
               type="multiple"
               className="flex flex-col gap-1"
               value={expandedItems}

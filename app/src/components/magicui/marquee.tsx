@@ -1,73 +1,84 @@
-import { cn } from "@/lib/utils"
-import { ComponentPropsWithoutRef } from "react"
+"use client";
+
+import { cn } from "@/lib/utils";
+import { ComponentPropsWithoutRef, ReactNode } from "react";
 
 interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
   /**
-   * Optional CSS class name to apply custom styles
+   * The content to be repeated
    */
-  className?: string
+  children: ReactNode;
   /**
-   * Whether to reverse the animation direction
-   * @default false
+   * Whether to pause on hover
    */
-  reverse?: boolean
+  pauseOnHover?: boolean;
   /**
-   * Whether to pause the animation on hover
-   * @default false
+   * Whether to reverse the direction
    */
-  pauseOnHover?: boolean
+  reverse?: boolean;
   /**
-   * Content to be displayed in the marquee
+   * Whether to fade the edges
    */
-  children: React.ReactNode
+  fade?: boolean;
   /**
-   * Whether to animate vertically instead of horizontally
-   * @default false
+   * Custom duration for the animation
    */
-  vertical?: boolean
+  duration?: string;
   /**
-   * Number of times to repeat the content
-   * @default 4
+   * Custom className for the marquee container
    */
-  repeat?: number
+  className?: string;
 }
 
 export function Marquee({
-  className,
-  reverse = false,
-  pauseOnHover = false,
   children,
-  vertical = false,
-  repeat = 4,
+  pauseOnHover = false,
+  reverse = false,
+  fade = false,
+  duration = "40s",
+  className,
   ...props
 }: MarqueeProps) {
   return (
     <div
-      {...props}
       className={cn(
-        "group flex overflow-hidden p-2 [--duration:40s] [--gap:1rem] [gap:var(--gap)]",
-        {
-          "flex-row": !vertical,
-          "flex-col": vertical,
-        },
+        "flex w-full overflow-hidden",
+        fade && "[mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]",
         className
       )}
+      style={{
+        "--duration": duration,
+        "--gap": "1rem",
+      } as React.CSSProperties}
+      {...props}
     >
-      {Array(repeat)
-        .fill(0)
-        .map((_, i) => (
-          <div
-            key={i}
-            className={cn("flex shrink-0 justify-around [gap:var(--gap)]", {
-              "animate-marquee flex-row": !vertical,
-              "animate-marquee-vertical flex-col": vertical,
-              "group-hover:[animation-play-state:paused]": pauseOnHover,
-              "[animation-direction:reverse]": reverse,
-            })}
-          >
-            {children}
-          </div>
-        ))}
+      <div
+        className={cn(
+          "flex min-w-full shrink-0 items-center justify-around gap-[--gap]",
+          "animate-marquee",
+          reverse && "[animation-direction:reverse]",
+          pauseOnHover && "hover:[animation-play-state:paused]"
+        )}
+        style={{
+          animationDuration: "var(--duration)",
+        }}
+      >
+        {children}
+      </div>
+      <div
+        className={cn(
+          "flex min-w-full shrink-0 items-center justify-around gap-[--gap]",
+          "animate-marquee",
+          reverse && "[animation-direction:reverse]",
+          pauseOnHover && "hover:[animation-play-state:paused]"
+        )}
+        style={{
+          animationDuration: "var(--duration)",
+        }}
+        aria-hidden="true"
+      >
+        {children}
+      </div>
     </div>
-  )
+  );
 }
