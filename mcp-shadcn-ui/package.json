@@ -1,0 +1,17 @@
+{
+  "name": "mcp-shadcn-ui",
+  "version": "0.1.0",
+  "description": "MCP Server for shadcn/ui components",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && chmod +x build/index.js",
+    "start": "node build/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

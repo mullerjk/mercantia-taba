@@ -9,6 +9,15 @@
         "LOG_LEVEL": "info"
       },
       "description": "Schema.org MCP Server - Single source of truth for Schema.org data"
+    },
+    "next-devtools": {
+      "command": "node",
+      "args": ["next-devtools-mcp/dist/index.js"],
+      "cwd": "/Users/antoniomuller/Sites/taba/next-devtools-mcp",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "description": "Next.js DevTools MCP Server - Development tools, documentation access, and upgrade assistance (runtime diagnostics require Next.js 16+)"
     }
   },
   "commands": {
@@ -29,6 +38,18 @@
       "command": "bash",
       "args": ["./test-integration.sh"],
       "description": "Tests the complete MCP integration with Schema.org hierarchy"
+    },
+    "build-next-devtools": {
+      "title": "Build Next.js DevTools MCP",
+      "command": "bash",
+      "args": ["-c", "cd next-devtools-mcp && pnpm build"],
+      "description": "Builds the Next.js DevTools MCP server"
+    },
+    "test-next-devtools": {
+      "title": "Test Next.js DevTools MCP",
+      "command": "bash",
+      "args": ["-c", "cd next-devtools-mcp && pnpm test"],
+      "description": "Runs tests for the Next.js DevTools MCP server"
     }
   },
   "settings": {

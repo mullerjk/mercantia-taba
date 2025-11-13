@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exec } from 'child_process'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
+import { db } from '@/db'
+import { entities } from '@/db/schema'
+import { eq, inArray, desc } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    // Query PostgreSQL directly using psql command
-    let query = 'SELECT * FROM schema_entities ORDER BY created_at DESC'
+    let entitiesData
+
     if (type) {
       // Ensure type has schema: prefix
       const schemaType = type.startsWith('schema:') ? type : `schema:${type}`
@@ -34,42 +33,29 @@ export async function GET(request: NextRequest) {
         }
 
         const subtypes = typeMappings[schemaType] || [schemaType]
-        const typeList = subtypes.map(t => `'${t}'`).join(', ')
-        query = `SELECT * FROM schema_entities WHERE schema_type IN (${typeList}) ORDER BY created_at DESC`
+        entitiesData = await db.select().from(entities).where(inArray(entities.type, subtypes)).orderBy(desc(entities.createdAt))
       } else {
         // For specific types, exact match
-        query = `SELECT * FROM schema_entities WHERE schema_type = '${schemaType}' ORDER BY created_at DESC`
+        entitiesData = await db.select().from(entities).where(eq(entities.type, schemaType)).orderBy(desc(entities.createdAt))
       }
+    } else {
+      entitiesData = await db.select().from(entities).orderBy(desc(entities.createdAt))
     }
 
-    const psqlCommand = `psql "postgresql://postgres:postgres@127.0.0.1:54325/postgres" -c "${query}" -t -A -F '|'`
+    // Transform the data to match the expected format
+    const formattedEntities = entitiesData.map(entity => ({
+      id: entity.id,
+      name: entity.properties?.name || 'Unknown',
+      description: entity.properties?.description || '',
+      schema_type: entity.type,
+      parent_types: [], // This would need a separate hierarchy table
+      properties: entity.properties || {},
+      is_abstract: false, // Default for now
+      created_at: entity.createdAt?.toISOString(),
+      updated_at: entity.updatedAt?.toISOString()
+    }))
 
-    const { stdout, stderr } = await execAsync(psqlCommand)
-
-    if (stderr && !stdout) {
-      console.error('psql error:', stderr)
-      return NextResponse.json([])
-    }
-
-    // Parse the psql output
-    const lines = stdout.trim().split('\n').filter(line => line.trim())
-
-    const entities = lines.map(line => {
-      const [id, name, description, schema_type, parent_types, properties, is_abstract, created_at, updated_at] = line.split('|')
-      return {
-        id,
-        name,
-        description: description || '',
-        schema_type,
-        parent_types: parent_types ? parent_types.split(',') : [],
-        properties: properties ? JSON.parse(properties) : {},
-        is_abstract: is_abstract === 't',
-        created_at,
-        updated_at
-      }
-    }).filter(entity => entity.id) // Filter out empty lines
-
-    return NextResponse.json(entities)
+    return NextResponse.json(formattedEntities)
   } catch (error) {
     console.error('Error fetching entities:', error)
     return NextResponse.json([])

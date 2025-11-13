@@ -3,7 +3,7 @@
 import { Dock, DockIcon } from "@/components/magicui/dock";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { Home, Trees, ShoppingBag, Settings, ShoppingCart, User, Users, Package, DollarSign } from "lucide-react";
+import { Home, ShoppingBag, ShoppingCart, User, Users, Package, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -20,9 +20,10 @@ import {
 interface DockNavigationProps {
   showSidebar: boolean;
   onToggleSidebar: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationProps) {
+export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: DockNavigationProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [showMercantia, setShowMercantia] = useState(false);
@@ -43,22 +44,35 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
   // Handle Home navigation - always closes Mercantia and goes to home
   const handleHomeClick = () => {
     setShowMercantia(false);
+    if (onNavigate) {
+      onNavigate('dashboard');
+    }
   };
 
   // Handle Marketplace navigation
   const handleMarketplaceClick = () => {
-    router.push('/marketplace');
+    if (onNavigate) {
+      onNavigate('marketplace');
+    }
   };
 
   // Handle Cart navigation
   const handleCartClick = () => {
-    router.push('/checkout');
+    if (onNavigate) {
+      onNavigate('checkout');
+    }
   };
 
-  // Handle Settings navigation
-  const handleSettingsClick = () => {
-    router.push('/settings');
+  // Get current page from URL or pathname
+  const getCurrentPage = () => {
+    if (pathname === '/' || pathname === '') return 'dashboard';
+    const segments = pathname.split('/').filter(Boolean);
+    return segments[0] || 'dashboard';
   };
+
+  const currentPage = getCurrentPage();
+
+
 
   return (
     <TooltipProvider>
@@ -70,16 +84,15 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
             <DockIcon>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link
-                    href="/"
+                  <button
                     onClick={handleHomeClick}
                     className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                      !showMercantia && pathname === "/" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
+                      !showMercantia && currentPage === "dashboard" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
                     }`}
                     aria-label="Home"
                   >
                     <Home className="w-4 h-4" />
-                  </Link>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="z-[70]">
                   <p>Início</p>
@@ -87,25 +100,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               </Tooltip>
             </DockIcon>
 
-            {/* Sidebar Toggle Icon - Independent state based only on showSidebar prop */}
-            <DockIcon>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={onToggleSidebar}
-                    className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                      showSidebar ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
-                    }`}
-                    aria-label={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
-                  >
-                    <Trees className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="z-[70]">
-                  <p>{showSidebar ? "Ocultar Menu" : "Mostrar Menu"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </DockIcon>
+
 
             {/* ShoppingBag Icon - Navigate to marketplace */}
             <DockIcon>
@@ -114,10 +109,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
                   <button
                     onClick={handleMarketplaceClick}
                     className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                      pathname === "/marketplace" ||
-                      pathname.startsWith("/organization/") ||
-                      pathname.startsWith("/department/") ||
-                      pathname.startsWith("/product/")
+                      currentPage === "marketplace"
                         ? "bg-secondary text-secondary-foreground"
                         : "hover:bg-secondary"
                     }`}
@@ -132,19 +124,19 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               </Tooltip>
             </DockIcon>
 
-            {/* ShoppingCart Icon - Navigate to checkout/cart */}
-            <DockIcon>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={handleCartClick}
-                    className={`relative flex size-12 rounded-full items-center justify-center transition-colors ${
-                      pathname === "/checkout" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
-                    }`}
-                    aria-label="Cart"
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    {state.itemCount > 0 && (
+            {/* ShoppingCart Icon - Only show when there are items in cart */}
+            {state.itemCount > 0 && (
+              <DockIcon>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={handleCartClick}
+                      className={`relative flex size-12 rounded-full items-center justify-center transition-colors ${
+                        currentPage === "checkout" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
+                      }`}
+                      aria-label="Cart"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
                       <Badge
                         variant="destructive"
                         className={`absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs transition-all duration-300 z-20 ${
@@ -155,14 +147,14 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
                       >
                         {state.itemCount}
                       </Badge>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="z-[70]">
-                  <p>Carrinho ({state.itemCount})</p>
-                </TooltipContent>
-              </Tooltip>
-            </DockIcon>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="z-[70]">
+                    <p>Carrinho ({state.itemCount})</p>
+                  </TooltipContent>
+                </Tooltip>
+              </DockIcon>
+            )}
 
             {/* Separator */}
             <div className="flex items-center px-2">
@@ -174,9 +166,9 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => router.push('/account')}
+                    onClick={() => onNavigate?.('account')}
                     className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                      pathname === "/account" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
+                      currentPage === "account" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
                     }`}
                     aria-label="My Account"
                   >
@@ -194,9 +186,9 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => router.push('/relationships')}
+                    onClick={() => onNavigate?.('relationships')}
                     className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                      pathname === "/relationships" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
+                      currentPage === "relationships" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
                     }`}
                     aria-label="My Relationships"
                   >
@@ -214,9 +206,9 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => router.push('/inventory')}
+                    onClick={() => onNavigate?.('inventory')}
                     className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                      pathname === "/inventory" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
+                      currentPage === "inventory" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
                     }`}
                     aria-label="Inventory"
                   >
@@ -234,9 +226,9 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => router.push('/finances')}
+                    onClick={() => onNavigate?.('finances')}
                     className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                      pathname === "/finances" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
+                      currentPage === "finances" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
                     }`}
                     aria-label="My Finances"
                   >
@@ -249,30 +241,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar }: DockNavigationP
               </Tooltip>
             </DockIcon>
 
-            {/* Second Separator */}
-            <div className="flex items-center px-2">
-              <div className="w-px h-8 bg-border"></div>
-            </div>
 
-            {/* Settings Icon - Navigate to settings */}
-            <DockIcon>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={handleSettingsClick}
-                    className={`flex size-12 rounded-full items-center justify-center transition-colors ${
-                      pathname === "/settings" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
-                    }`}
-                    aria-label="Settings"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="z-[70]">
-                  <p>Configurações</p>
-                </TooltipContent>
-              </Tooltip>
-            </DockIcon>
 
             {/* BorderBeam Effect - Inside the dock */}
             <BorderBeam 

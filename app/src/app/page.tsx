@@ -1,44 +1,263 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { CalendarIcon, FileTextIcon } from "@radix-ui/react-icons";
-import { BellIcon, Share2Icon } from "lucide-react";
+import { useState, useEffect, Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
+import {
+  Home,
+  Settings,
+  User,
+  BarChart3,
+  ShoppingCart,
+  Package,
+  Users,
+  Download,
+  Plus,
+  ChevronDown,
+  Loader2,
+  Bell,
+  Search,
+  Menu,
+  X,
+  CreditCard,
+  Building,
+  Heart,
+  TrendingUp,
+  DollarSign,
+  Wallet,
+  PiggyBank,
+  Receipt,
+  Target,
+  Activity,
+  Globe,
+  Briefcase,
+  Gift,
+  Zap,
+  ChevronRight,
+  PanelLeft
+} from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import { AnimatedBeamMultipleOutputDemo } from "@/components/magicui/animated-beam-multiple-outputs";
-import { AnimatedListDemo } from "@/components/magicui/animated-list-demo";
-import { BentoCard, BentoGrid } from "@/components/magicui/bento-grid";
-import { Marquee } from "@/components/magicui/marquee";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { SchemaExplorerTree } from "@/components/schema-explorer-tree";
+
+// Enhanced Schema Tree Component with better UX
+function EnhancedSchemaTree({ onEntitySelect }: { onEntitySelect?: (entityName: string) => void }) {
+  const [entities, setEntities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const fetchEntities = async () => {
+      try {
+        const response = await fetch('/api/schema-hierarchy');
+        if (response.ok) {
+          const data = await response.json();
+          setEntities(data);
+        }
+      } catch (error) {
+        console.error('Failed to load schema entities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEntities();
+  }, []);
+
+  const toggleExpansion = (entityId: string) => {
+    const updateEntityExpansion = (entities: any[]): any[] => {
+      return entities.map(entity => {
+        if (entity.id === entityId) {
+          return { ...entity, isExpanded: !entity.isExpanded };
+        }
+        if (entity.children && entity.children.length > 0) {
+          return { ...entity, children: updateEntityExpansion(entity.children) };
+        }
+        return entity;
+      });
+    };
+
+    setEntities(updateEntityExpansion(entities));
+  };
+
+  const handleEntitySelect = (entityId: string) => {
+    if (onEntitySelect) {
+      onEntitySelect(entityId);
+    }
+  };
+
+  const filteredEntities = entities.filter(entity =>
+    entity.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const renderEntity = (entity: any, level = 0) => {
+    const hasChildren = entity.children && entity.children.length > 0;
+
+    return (
+      <div key={entity.id}>
+        <div
+          className={`flex items-center gap-2 py-2 px-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-md transition-colors ${
+            level > 0 ? 'ml-4' : ''
+          }`}
+          onClick={() => handleEntitySelect(entity.id)}
+        >
+          {hasChildren ? (
+            <button
+              className="w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleExpansion(entity.id);
+              }}
+            >
+              {entity.isExpanded ? '▼' : '▶'}
+            </button>
+          ) : (
+            <div className="w-4" />
+          )}
+          <Globe className="w-4 h-4 text-muted-foreground" />
+          <span className="truncate">{entity.name}</span>
+        </div>
+
+        {hasChildren && entity.isExpanded && (
+          <div className="ml-2">
+            {entity.children.map((child: any) => renderEntity(child, level + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar entidades..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-8 h-8 text-sm"
+        />
+      </div>
+      <div className="space-y-1 max-h-64 overflow-y-auto">
+        {filteredEntities.map((entity) => renderEntity(entity))}
+      </div>
+    </div>
+  );
+}
+
+// Dynamic imports for pages - loaded on demand with better error boundaries
+const DashboardHome = dynamic(() => import('./dashboard-home'), {
+  loading: () => <PageLoader />,
+  ssr: false
+});
+
+const MarketplacePage = dynamic(() => import('../components/pages/marketplace'), {
+  loading: () => <PageLoader />,
+  ssr: false
+});
+
+const AccountPage = dynamic(() => import('../components/pages/account'), {
+  loading: () => <PageLoader />,
+  ssr: false
+});
+
+const RelationshipsPage = dynamic(() => import('../components/pages/relationships'), {
+  loading: () => <PageLoader />,
+  ssr: false
+});
+
+const InventoryPage = dynamic(() => import('../components/pages/inventory'), {
+  loading: () => <PageLoader />,
+  ssr: false
+});
+
+const FinancesPage = dynamic(() => import('../components/pages/finances'), {
+  loading: () => <PageLoader />,
+  ssr: false
+});
+
+const CheckoutPage = dynamic(() => import('../components/pages/checkout'), {
+  loading: () => <PageLoader />,
+  ssr: false
+});
+
+// Enhanced loading component
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="absolute inset-0 h-8 w-8 animate-ping rounded-full bg-primary/20"></div>
+        </div>
+        <p className="text-sm text-muted-foreground">Carregando Mercantia...</p>
+      </div>
+    </div>
+  );
+}
+
+// Enhanced page content renderer with better routing
+function PageContent({ currentPage }: { currentPage: string }) {
+  switch (currentPage) {
+    case 'dashboard':
+      return <DashboardHome />;
+    case 'marketplace':
+      return <MarketplacePage />;
+    case 'account':
+      return <AccountPage />;
+    case 'relationships':
+      return <RelationshipsPage />;
+    case 'inventory':
+      return <InventoryPage />;
+    case 'finances':
+      return <FinancesPage />;
+    case 'checkout':
+      return <CheckoutPage />;
+    default:
+      return <DashboardHome />;
+  }
+}
+
 import { DockNavigation } from "@/components/dock-navigation";
-import { GlobalSidebar } from "@/components/global-sidebar";
-
-const files = [
-  {
-    name: "bitcoin.pdf",
-    body: "Bitcoin is a cryptocurrency invented in 2008 by an unknown person or group of people using the name Satoshi Nakamoto.",
-  },
-  {
-    name: "finances.xlsx",
-    body: "A spreadsheet or worksheet is a file made of rows and columns that help sort data, arrange data easily, and calculate numerical data.",
-  },
-  {
-    name: "logo.svg",
-    body: "Scalable Vector Graphics is an Extensible Markup Language-based vector image format for two-dimensional graphics with support for interactivity and animation.",
-  },
-  {
-    name: "keys.gpg",
-    body: "GPG keys are used to encrypt and decrypt email, files, directories, and whole disk partitions and to authenticate messages.",
-  },
-  {
-    name: "seed.txt",
-    body: "A seed phrase, seed recovery phrase or backup seed phrase is a list of words which store all the information needed to recover Bitcoin funds on-chain.",
-  },
-]
-
-
 
 interface ChangelogItem {
   id: string;
@@ -51,442 +270,477 @@ interface ChangelogItem {
   schemaType?: string;
 }
 
-export default function Home() {
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [changelogItems, setChangelogItems] = useState<ChangelogItem[]>([]);
-  const [selectedSchemaType, setSelectedSchemaType] = useState<string | null>(null);
-  const { t } = useTranslation();
+export default function MercantiaSuperAdmin({ initialPage }: { initialPage?: string }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [notifications] = useState(3); // Mock notifications count
+  const [currentPage, setCurrentPage] = useState(initialPage || 'dashboard');
 
-  const toggleSidebar = () => {
-    setShowSidebar(!showSidebar);
-  };
+  // Collapsible state for sidebar groups
+  const [mainNavOpen, setMainNavOpen] = useState(true);
+  const [businessNavOpen, setBusinessNavOpen] = useState(true);
+  const [schemaNavOpen, setSchemaNavOpen] = useState(false);
 
-  const handleRouteChange = (route: string) => {
-    console.log("Route change:", route);
-  };
-
-  const handleEntitySelect = (entityName: string) => {
-    console.log("Entity selected in home:", entityName);
-    console.log("Setting selectedSchemaType to:", entityName);
-    setSelectedSchemaType(entityName);
-  };
-
-  // Fetch real entities from database
-  useEffect(() => {
-    const fetchEntities = async () => {
-      try {
-        console.log('Fetching entities from API...');
-        const response = await fetch('/api/entities');
-        if (response.ok) {
-          const entities = await response.json();
-          console.log('Fetched entities:', entities);
-
-          const items: ChangelogItem[] = entities.map((entity: any) => {
-            const category = entity.schema_type.split(':')[1] || 'Thing';
-            let description = `New ${category} entity registered in the system`;
-
-            // Create specific descriptions based on entity type and properties
-            switch (category) {
-              case 'Person':
-                const personProps = entity.properties || {};
-                const personDetails = [];
-                if (personProps.jobTitle) personDetails.push(personProps.jobTitle);
-                if (personProps.worksFor) personDetails.push(`at ${personProps.worksFor}`);
-                if (personProps.email) personDetails.push(`contact: ${personProps.email}`);
-                description = personDetails.length > 0
-                  ? `${personProps.givenName || ''} ${personProps.familyName || entity.name} - ${personDetails.join(', ')}`
-                  : `${entity.name} joined the network`;
-                break;
-
-              case 'Organization':
-                const orgProps = entity.properties || {};
-                const orgDetails = [];
-                if (orgProps.orgType) orgDetails.push(orgProps.orgType);
-                if (orgProps.foundingDate) orgDetails.push(`Founded ${orgProps.foundingDate}`);
-                if (orgProps.url) orgDetails.push(`Website: ${orgProps.url}`);
-                description = orgDetails.length > 0
-                  ? `${entity.name} - ${orgDetails.join(', ')}`
-                  : `${entity.name} is now part of our business network`;
-                break;
-
-              case 'Product':
-                const productProps = entity.properties || {};
-                const productDetails = [];
-                if (productProps.price) productDetails.push(`$${productProps.price}`);
-                if (productProps.category) productDetails.push(productProps.category);
-                if (productProps.brand) productDetails.push(`by ${productProps.brand}`);
-                description = productDetails.length > 0
-                  ? `${entity.name} - ${productDetails.join(', ')}`
-                  : `${entity.name} now available in our marketplace`;
-                break;
-
-              default:
-                description = entity.properties?.description || `New ${category} entity: ${entity.name}`;
-            }
-
-            return {
-              id: entity.id,
-              title: entity.name,
-              description: description,
-              emoji: getEmojiForCategory(category),
-              category: category,
-              schemaType: entity.schema_type,
-              timestamp: new Date(entity.created_at).toLocaleString(),
-              version: `v1.0.0`,
-            };
-          });
-
-          console.log('Converted to timeline items:', items);
-          setChangelogItems(items);
-        } else {
-          console.error('Failed to fetch entities:', response.status);
-          setChangelogItems([]);
-        }
-      } catch (error) {
-        console.error('Error fetching entities:', error);
-        setChangelogItems([]);
-      }
-    };
-
-
-
-    fetchEntities();
-
-    // Refresh data every 30 seconds
-    const interval = setInterval(fetchEntities, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const getEmojiForCategory = (category: string): string => {
-    const emojiMap: Record<string, string> = {
-      "Thing": "🌐",
-      "CreativeWork": "🎨",
-      "Organization": "🏢",
-      "Person": "👤",
-      "Place": "📍",
-      "Event": "📅",
-      "Product": "📦",
-      "Action": "⚡",
-      "MedicalEntity": "🏥",
-      "BioChemEntity": "🧬",
-      "ChemicalSubstance": "⚗️",
-      "New": "✨",
-    };
-    return emojiMap[category] || "📄";
-  };
-
-
-
-  // Filter changelog items based on selected schema type
-  const filteredChangelogItems = selectedSchemaType
-    ? changelogItems.filter(item => {
-        const matches = item.schemaType === selectedSchemaType;
-        console.log(`Filtering item with schemaType "${item.schemaType}" against selected "${selectedSchemaType}": ${matches}`);
-        return matches;
-      })
-    : changelogItems;
-
-  console.log(`Filtering: selectedSchemaType=${selectedSchemaType}, total items=${changelogItems.length}, filtered items=${filteredChangelogItems.length}`);
-
-  const features = [
-    {
-      Icon: FileTextIcon,
-      name: "Save your files",
-      description: "We automatically save your files as you type.",
-      href: "#",
-      cta: "Learn more",
-      className: "col-span-3 lg:col-span-1",
-      background: (
-        <Marquee
-          pauseOnHover
-          className="absolute top-10 [mask-image:linear-gradient(to_top,transparent_40%,#000_100%)] [--duration:20s]"
-        >
-          {files.map((f, idx) => (
-            <figure
-              key={idx}
-              className={cn(
-                "relative w-32 cursor-pointer overflow-hidden rounded-xl border p-4",
-                "border-gray-950/[.1] bg-gray-950/[.01] hover:bg-gray-950/[.05]",
-                "dark:border-gray-50/[.1] dark:bg-gray-50/[.10] dark:hover:bg-gray-50/[.15]",
-                "transform-gpu blur-[1px] transition-all duration-300 ease-out hover:blur-none"
-              )}
-            >
-              <div className="flex flex-row items-center gap-2">
-                <div className="flex flex-col">
-                  <figcaption className="text-sm font-medium dark:text-white">
-                    {f.name}
-                  </figcaption>
-                </div>
-              </div>
-              <blockquote className="mt-2 text-xs">{f.body}</blockquote>
-            </figure>
-          ))}
-        </Marquee>
-      ),
-    },
-    {
-      Icon: BellIcon,
-      name: "Notifications",
-      description: "Get notified when something happens.",
-      href: "#",
-      cta: "Learn more",
-      className: "col-span-3 lg:col-span-2",
-      background: (
-        <AnimatedListDemo className="absolute top-4 right-2 h-[300px] w-full scale-75 border-none [mask-image:linear-gradient(to_top,transparent_10%,#000_100%)] transition-all duration-300 ease-out group-hover:scale-90" />
-      ),
-    },
-    {
-      Icon: Share2Icon,
-      name: t('globalStructure.title'),
-      description: t('globalStructure.subtitle'),
-      href: "#",
-      cta: t('globalStructure.explore'),
-      className: "col-span-3 lg:col-span-2",
-      background: (
-        <AnimatedListDemo className="absolute top-4 right-2 h-[300px] w-full scale-75 border-none [mask-image:linear-gradient(to_top,transparent_10%,#000_100%)] transition-all duration-300 ease-out group-hover:scale-90" />
-      ),
-    },
-    {
-      Icon: CalendarIcon,
-      name: "Calendar",
-      description: "Use the calendar to filter your files by date.",
-      className: "col-span-3 lg:col-span-1",
-      href: "#",
-      cta: "Learn more",
-      background: (
-        <Calendar
-          mode="single"
-          selected={new Date(2022, 4, 11, 0, 0, 0)}
-          className="absolute top-10 right-0 origin-top scale-75 rounded-md border [mask-image:linear-gradient(to_top,transparent_40%,#000_100%)] transition-all duration-300 ease-out group-hover:scale-90"
-        />
-      ),
-    },
-    {
-      Icon: BellIcon,
-      name: t('donations.title'),
-      description: t('donations.subtitle'),
-      href: "/donations",
-      cta: t('donations.campaigns'),
-      className: "col-span-3 lg:col-span-2",
-      background: (
-        <AnimatedListDemo className="absolute top-4 right-2 h-[300px] w-full scale-75 border-none [mask-image:linear-gradient(to_top,transparent_10%,#000_100%)] transition-all duration-300 ease-out group-hover:scale-90" />
-      ),
-    },
-  ];
-
-  const ChangelogEntry = ({ item }: { item: ChangelogItem }) => {
-    const getEntityUrl = () => {
-      switch (item.category) {
-        case 'Person':
-          return `/person/${item.id}`;
-        case 'Organization':
-          return `/organization/${item.id}`;
-        case 'Product':
-          return `/product/${item.id}`;
-        default:
-          return null;
-      }
-    };
-
-    const entityUrl = getEntityUrl();
-
-    const renderMiniCards = () => {
-      // For now, we'll create mini-cards based on the description we already generated
-      // In a real implementation, we'd have the entity data available
-      const miniCards = [];
-
-      switch (item.category) {
-        case 'Person':
-          // Extract info from description: "Antonio Müller - Software Engineer, at Mercantia, contact: antonio@mercantia.app"
-          const personParts = item.description.split(' - ');
-          if (personParts.length > 1) {
-            const details = personParts[1].split(', ');
-            details.forEach((detail, index) => {
-              if (detail.includes('Software Engineer')) {
-                miniCards.push(
-                  <div key={`person-${index}`} className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-md">
-                    <span className="text-xs font-medium text-muted-foreground">{t('home.role')}</span>
-                    <span className="text-sm font-semibold text-foreground">Software Engineer</span>
-                  </div>
-                );
-              } else if (detail.includes('at Mercantia')) {
-                miniCards.push(
-                  <div key={`person-${index}`} className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-md">
-                    <span className="text-xs font-medium text-muted-foreground">{t('home.company')}</span>
-                    <span className="text-sm font-semibold text-foreground">Mercantia</span>
-                  </div>
-                );
-              } else if (detail.includes('contact:')) {
-                miniCards.push(
-                  <div key={`person-${index}`} className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-md">
-                    <span className="text-xs font-medium text-muted-foreground">{t('home.contact')}</span>
-                    <span className="text-xs font-semibold text-foreground truncate">antonio@mercantia.app</span>
-                  </div>
-                );
-              }
-            });
-          }
-          break;
-
-        case 'Organization':
-          // Extract info from description: "Mercantia Solutions - Technology Company, Founded 2020-01-01, Website: https://mercantia.app"
-          const orgParts = item.description.split(' - ');
-          if (orgParts.length > 1) {
-            const details = orgParts[1].split(', ');
-            details.forEach((detail, index) => {
-              if (detail.includes('Technology Company')) {
-                miniCards.push(
-                  <div key={`org-${index}`} className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-md">
-                    <span className="text-xs font-medium text-muted-foreground">{t('home.type')}</span>
-                    <span className="text-sm font-semibold text-foreground">Technology Company</span>
-                  </div>
-                );
-              } else if (detail.includes('Founded')) {
-                miniCards.push(
-                  <div key={`org-${index}`} className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-md">
-                    <span className="text-xs font-medium text-muted-foreground">{t('home.founded')}</span>
-                    <span className="text-sm font-semibold text-foreground">2020-01-01</span>
-                  </div>
-                );
-              } else if (detail.includes('Website:')) {
-                miniCards.push(
-                  <div key={`org-${index}`} className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-md">
-                    <span className="text-xs font-medium text-muted-foreground">{t('home.website')}</span>
-                    <span className="text-xs font-semibold text-foreground truncate">mercantia.app</span>
-                  </div>
-                );
-              }
-            });
-          }
-          break;
-
-        case 'Product':
-          // Extract info from description: "Schema.org Toolkit Pro - $299.99, Software, by Mercantia"
-          const productParts = item.description.split(' - ');
-          if (productParts.length > 1) {
-            const details = productParts[1].split(', ');
-            details.forEach((detail, index) => {
-              if (detail.startsWith('$')) {
-                miniCards.push(
-                  <div key={`product-${index}`} className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-md">
-                    <span className="text-xs font-medium text-muted-foreground">{t('home.price')}</span>
-                    <span className="text-lg font-bold text-foreground">{detail}</span>
-                  </div>
-                );
-              } else if (detail === 'Software') {
-                miniCards.push(
-                  <div key={`product-${index}`} className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-md">
-                    <span className="text-xs font-medium text-muted-foreground">{t('home.category')}</span>
-                    <span className="text-sm font-semibold text-foreground">{detail}</span>
-                  </div>
-                );
-              } else if (detail.includes('by Mercantia')) {
-                miniCards.push(
-                  <div key={`product-${index}`} className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-md">
-                    <span className="text-xs font-medium text-muted-foreground">{t('home.brand')}</span>
-                    <span className="text-sm font-semibold text-foreground">Mercantia</span>
-                  </div>
-                );
-              }
-            });
-          }
-          break;
-      }
-
-      return miniCards.length > 0 ? (
-        <div className="flex flex-wrap gap-2 mt-3">
-          {miniCards}
-        </div>
-      ) : null;
-    };
-
-    const CardContent = () => (
-      <div className="p-4">
-        <div className="flex items-start gap-4 mb-3">
-          <div className="flex-shrink-0">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-2xl">{item.emoji}</span>
-            </div>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-lg font-semibold text-foreground truncate">
-                {item.title}
-              </h3>
-              <Badge variant="secondary" className="text-xs shrink-0">
-                {t(`home.${item.category.toLowerCase()}`)}
-              </Badge>
-              {item.version && (
-                <Badge variant="outline" className="text-xs shrink-0">
-                  {item.version}
-                </Badge>
-              )}
-            </div>
-            <p className="text-muted-foreground mb-3 leading-relaxed text-sm">
-              {item.description}
-            </p>
-          </div>
-        </div>
-
-        {/* Mini Cards */}
-        {renderMiniCards()}
-
-        {/* Live indicator */}
-        <div className="flex items-center justify-end mt-3">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="text-xs text-muted-foreground">{t('home.live')}</span>
-          </div>
-        </div>
-      </div>
-    );
-
-    if (entityUrl) {
-      return (
-        <a href={entityUrl} className="block z-10 relative">
-          <div className="w-full max-w-2xl bg-background border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent />
-          </div>
-        </a>
-      );
+  // Sidebar compact mode with persistence
+  const [sidebarCompact, setSidebarCompact] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebarCompact');
+      return saved ? JSON.parse(saved) : false;
     }
+    return false;
+  });
 
-    return (
-      <div className="w-full max-w-2xl bg-background border border-border rounded-lg shadow-sm z-10 relative">
-        <CardContent />
-      </div>
-    );
+  // Persist sidebar state
+  const toggleSidebarCompact = () => {
+    const newState = !sidebarCompact;
+    setSidebarCompact(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebarCompact', JSON.stringify(newState));
+    }
+  };
+
+  // Update current page based on pathname and query params
+  useEffect(() => {
+    const pageParam = searchParams.get('page');
+    if (pageParam) {
+      setCurrentPage(pageParam);
+    } else if (pathname === '/' || pathname === '') {
+      setCurrentPage('dashboard');
+    } else {
+      const segments = pathname.split('/').filter(Boolean);
+      const route = segments[0] || 'dashboard';
+      setCurrentPage(route);
+    }
+  }, [pathname, searchParams]);
+
+  const getPageTitle = (page: string) => {
+    const titles = {
+      dashboard: 'Dashboard',
+      marketplace: 'Marketplace',
+      account: 'Minha Conta',
+      relationships: 'Relacionamentos',
+      inventory: 'Inventário',
+      finances: 'Finanças',
+      checkout: 'Finalizar Compra'
+    };
+    return titles[page as keyof typeof titles] || 'Dashboard';
+  };
+
+  const getPageDescription = (page: string) => {
+    const descriptions = {
+      dashboard: 'Visão geral do seu negócio e atividades',
+      marketplace: 'Explore produtos e serviços disponíveis',
+      account: 'Gerencie suas informações pessoais',
+      relationships: 'Gerencie conexões e rede de contatos',
+      inventory: 'Controle de produtos e estoque',
+      finances: 'Gestão financeira completa',
+      checkout: 'Finalize suas compras'
+    };
+    return descriptions[page as keyof typeof descriptions] || 'Visão geral do seu negócio e atividades';
+  };
+
+  const navigateToPage = (page: string) => {
+    setCurrentPage(page);
+    // Update URL without causing a page reload
+    window.history.replaceState(null, '', page === 'dashboard' ? '/' : `/${page}`);
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-8">
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        {/* Enhanced Sidebar */}
+        <Sidebar className={`hidden md:flex border-r bg-card transition-all duration-300 flex-col h-screen ${
+          sidebarCompact ? 'w-16' : 'w-64'
+        }`}>
+          <SidebarHeader className="border-b flex-shrink-0">
+            <div className={`flex items-center py-4 ${
+              sidebarCompact ? 'px-2 justify-center' : 'px-4'
+            }`}>
+              <div className={`${
+                sidebarCompact ? 'w-8 h-8' : 'w-8 h-8'
+              } bg-primary rounded-lg flex items-center justify-center flex-shrink-0`}>
+                <Zap className="w-5 h-5 text-primary-foreground" />
+              </div>
+              {!sidebarCompact && (
+                <div className="grid flex-1 text-left text-sm leading-tight ml-3">
+                  <span className="truncate font-bold text-lg">Mercantia</span>
+                  <span className="truncate text-xs text-muted-foreground">Super Admin</span>
+                </div>
+              )}
+            </div>
+          </SidebarHeader>
 
+          <SidebarContent className="px-2 flex-1 overflow-y-auto">
+            {/* Compact Navigation Icons - Only visible when sidebar is compact */}
+            {sidebarCompact && (
+              <div className="flex flex-col items-center gap-2 py-4">
+                <button
+                  onClick={() => navigateToPage('dashboard')}
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                    currentPage === 'dashboard'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                  title="Dashboard"
+                >
+                  <Home className="w-5 h-5" />
+                </button>
 
-      {/* Bento Grid Demo - Exact MagicUI Layout */}
-      <div className="w-full px-8 pb-24">
-        <div className="max-w-7xl mx-auto">
-          <BentoGrid>
-            {features.map((feature, idx) => (
-              <BentoCard key={idx} {...feature} />
-            ))}
-          </BentoGrid>
+                <button
+                  onClick={() => navigateToPage('marketplace')}
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                    currentPage === 'marketplace'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                  title="Marketplace"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                </button>
+
+                <button
+                  onClick={() => navigateToPage('inventory')}
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                    currentPage === 'inventory'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                  title="Inventário"
+                >
+                  <Package className="w-5 h-5" />
+                </button>
+
+                <button
+                  onClick={() => navigateToPage('finances')}
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                    currentPage === 'finances'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                  title="Finanças"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                </button>
+
+                <div className="w-px h-8 bg-border my-2"></div>
+
+                <button
+                  onClick={() => navigateToPage('relationships')}
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                    currentPage === 'relationships'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                  title="Relacionamentos"
+                >
+                  <Users className="w-5 h-5" />
+                </button>
+
+                <button
+                  onClick={() => navigateToPage('account')}
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                    currentPage === 'account'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                  title="Minha Conta"
+                >
+                  <User className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+
+            {/* Main Navigation - Collapsible */}
+            <Collapsible open={mainNavOpen && !sidebarCompact} onOpenChange={setMainNavOpen}>
+              <SidebarGroup>
+                {!sidebarCompact && (
+                  <CollapsibleTrigger asChild>
+                    <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors flex items-center justify-between">
+                      <span>Navegação Principal</span>
+                      <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${mainNavOpen ? 'rotate-90' : ''}`} />
+                    </SidebarGroupLabel>
+                  </CollapsibleTrigger>
+                )}
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('dashboard')}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'dashboard'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <Home className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Dashboard</span>}
+                        </button>
+                      </SidebarMenuItem>
+
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('marketplace')}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'marketplace'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <ShoppingCart className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Marketplace</span>}
+                        </button>
+                      </SidebarMenuItem>
+
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('inventory')}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'inventory'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <Package className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Inventário</span>}
+                        </button>
+                      </SidebarMenuItem>
+
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('finances')}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'finances'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <BarChart3 className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Finanças</span>}
+                        </button>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
+
+            {/* Business Management - Collapsible */}
+            <Collapsible open={businessNavOpen && !sidebarCompact} onOpenChange={setBusinessNavOpen}>
+              <SidebarGroup>
+                {!sidebarCompact && (
+                  <CollapsibleTrigger asChild>
+                    <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors flex items-center justify-between">
+                      <span>Gestão Empresarial</span>
+                      <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${businessNavOpen ? 'rotate-90' : ''}`} />
+                    </SidebarGroupLabel>
+                  </CollapsibleTrigger>
+                )}
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('relationships')}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'relationships'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <Users className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Relacionamentos</span>}
+                        </button>
+                      </SidebarMenuItem>
+
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('account')}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'account'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <User className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Minha Conta</span>}
+                        </button>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
+
+            {/* Schema Explorer - Collapsible */}
+            <Collapsible open={schemaNavOpen && !sidebarCompact} onOpenChange={setSchemaNavOpen}>
+              <SidebarGroup>
+                {!sidebarCompact && (
+                  <CollapsibleTrigger asChild>
+                    <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors flex items-center justify-between">
+                      <span>Explorador Schema.org</span>
+                      <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${schemaNavOpen ? 'rotate-90' : ''}`} />
+                    </SidebarGroupLabel>
+                  </CollapsibleTrigger>
+                )}
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <div className="px-1">
+                      <EnhancedSchemaTree
+                        onEntitySelect={(entityName) => {
+                          console.log("Entity selected in Mercantia:", entityName);
+                        }}
+                      />
+                    </div>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
+          </SidebarContent>
+
+          <SidebarFooter className="border-t flex-shrink-0 bg-card">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                      sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                    }`}>
+                      <Avatar className={`${sidebarCompact ? 'h-6 w-6' : 'h-8 w-8'}`}>
+                        <AvatarImage src="/avatars/01.png" alt="User" />
+                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-xs">AM</AvatarFallback>
+                      </Avatar>
+                      {!sidebarCompact && (
+                        <div className="grid flex-1 text-left text-sm leading-tight">
+                          <span className="truncate font-medium">Antonio Müller</span>
+                          <span className="truncate text-xs text-muted-foreground">Premium Member</span>
+                        </div>
+                      )}
+                      {!sidebarCompact && <ChevronDown className="ml-auto w-4 h-4 text-muted-foreground" />}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                    side="top"
+                    align="end"
+                    sideOffset={4}
+                  >
+                    <DropdownMenuLabel className="p-0 font-normal">
+                      <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src="/avatars/01.png" alt="User" />
+                          <AvatarFallback className="bg-primary text-primary-foreground font-semibold">AM</AvatarFallback>
+                        </Avatar>
+                        <div className="grid flex-1 text-left text-sm leading-tight">
+                          <span className="truncate font-medium">Antonio Müller</span>
+                          <span className="truncate text-xs text-muted-foreground">antonio@mercantia.app</span>
+                        </div>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      Perfil
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configurações
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Assinatura
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600">
+                      Sair
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
+
+        {/* Main Content Area */}
+        <div className="flex flex-1 flex-col">
+          {/* Enhanced Header */}
+          <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-card px-6">
+            {/* Sidebar Toggle Button - Hidden on mobile, visible on tablet/desktop */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSidebarCompact}
+              className="hidden md:flex"
+              title={sidebarCompact ? "Expandir sidebar" : "Compactar sidebar"}
+            >
+              <PanelLeft className="w-4 h-4" />
+            </Button>
+
+            {/* Separator - Hidden on mobile, visible on tablet/desktop */}
+            <div className="hidden md:block w-px h-8 bg-border"></div>
+
+            {/* Page Title & Description */}
+            <div className="flex flex-col">
+              <h1 className="text-xl font-bold tracking-tight">{getPageTitle(currentPage)}</h1>
+              <p className="text-sm text-muted-foreground">{getPageDescription(currentPage)}</p>
+            </div>
+
+            {/* Header Actions */}
+            <div className="flex items-center gap-3 ml-auto">
+              {/* Search */}
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar..."
+                  className="w-64 pl-9 h-9 bg-background"
+                />
+              </div>
+
+              {/* Notifications */}
+              <Button variant="ghost" size="sm" className="relative">
+                <Bell className="w-5 h-5" />
+                {notifications > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {notifications}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Quick Actions */}
+              <div className="hidden md:flex items-center gap-2">
+                <Button variant="outline" size="sm">
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportar
+                </Button>
+                <Button size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo
+                </Button>
+              </div>
+            </div>
+          </header>
+
+          {/* Dynamic Page Content */}
+          <main className="flex-1 overflow-auto bg-muted/20">
+            <Suspense fallback={<PageLoader />}>
+              <PageContent currentPage={currentPage} />
+            </Suspense>
+          </main>
         </div>
       </div>
 
-      {/* Global Sidebar Overlay - positioned above content but below dock */}
-      <GlobalSidebar
-        isVisible={showSidebar}
-        onClose={() => setShowSidebar(false)}
-        onRouteChange={handleRouteChange}
-        onEntitySelect={handleEntitySelect}
-      />
-
-      {/* Dock Navigation - stays on top of everything */}
-      <DockNavigation
-        showSidebar={showSidebar}
-        onToggleSidebar={toggleSidebar}
-      />
-    </div>
+      {/* Enhanced Dock Navigation - Hidden on desktop, visible on tablet/mobile */}
+      <div className="md:hidden">
+        <DockNavigation
+          showSidebar={false}
+          onToggleSidebar={() => {}}
+          onNavigate={navigateToPage}
+        />
+      </div>
+    </SidebarProvider>
   );
 }

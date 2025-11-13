@@ -66,7 +66,8 @@ const Tree = forwardRef<HTMLDivElement, TreeViewProps>(
       dir,
       onSelectChange,
       ...props
-    }
+    },
+    ref
   ) => {
     const [selectedId, setSelectedId] = useState<string | undefined>(
       initialSelectedId
