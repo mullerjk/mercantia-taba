@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { GlobalSidebar } from "@/components/global-sidebar";
 import { DockNavigation } from "@/components/dock-navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -292,13 +291,7 @@ export default function DepartmentPage() {
         </div>
       </div>
 
-      {/* Global Sidebar Overlay */}
-      <GlobalSidebar
-        isVisible={showSidebar}
-        onClose={() => setShowSidebar(false)}
-        onRouteChange={handleRouteChange}
-        onEntitySelect={handleEntitySelect}
-      />
+
 
       {/* Dock Navigation */}
       <DockNavigation

@@ -6,9 +6,10 @@ import { useEntity } from "@/hooks/use-entity"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Person, Product, Organization, ConsumeAction, BuyAction, Relation } from "@/types/knowledge-graph"
 
 // Mock data para demonstração (fallback se API falhar)
-const mockEntities = {
+const mockEntities: Record<string, Person | Product | Organization> = {
   "person:maria": {
     id: "person:550e8400-e29b-41d4-a716-446655440000",
     type: "Person",
@@ -92,7 +93,7 @@ const mockEntities = {
       name: "Fazenda Boa Vista",
       legalName: "Fazenda Boa Vista Agropecuária Ltda",
       description: "Produtora de café orgânico certificado desde 1995",
-      email: "contato@fazen daboavista.com.br",
+      email: "contato@fazendaboavista.com.br",
       telephone: "+55 35 3221-9876",
       address: "Sul de Minas Gerais, Brasil",
       logo: "https://via.placeholder.com/150?text=FBV",
@@ -111,10 +112,10 @@ const mockEntities = {
       }
     ],
     trustScore: 92
-  }
+  } as Organization
 }
 
-const mockRelations = {
+const mockRelations: Record<string, (ConsumeAction | BuyAction)[]> = {
   "person:maria": [
     {
       id: "action:consume:123e4567-e89b-12d3-a456-426614174000",
@@ -162,7 +163,7 @@ const mockRelations = {
       ],
       createdAt: "2024-11-19T15:35:00Z",
       trustScore: 99
-    }
+    } as BuyAction
   ]
 }
 
@@ -191,7 +192,7 @@ export default function EntityPage() {
     // Try fallback to mock data
     const decodedId = decodeURIComponent(entityId)
     const mockEntity = mockEntities[decodedId as keyof typeof mockEntities]
-    const mockRelations = mockRelations[decodedId as keyof typeof mockRelations] || []
+    const entityRelations = mockRelations[decodedId as keyof typeof mockRelations] || []
 
     if (mockEntity) {
       return (
@@ -203,7 +204,7 @@ export default function EntityPage() {
               Não foi possível conectar à API. Exibindo dados de demonstração.
             </AlertDescription>
           </Alert>
-          <EntityViewer entity={mockEntity} relations={mockRelations} />
+          <EntityViewer entity={mockEntity} relations={entityRelations} />
         </div>
       )
     }
@@ -251,13 +252,23 @@ export default function EntityPage() {
     trustScore: rel.trustScore || undefined
   }))
 
+  // Convert verifications to correct format
+  const convertedVerifications = data.verifications.map(v => ({
+    ...v,
+    proof: v.proof ? {
+      type: (v.proof as any).type || 'document',
+      url: (v.proof as any).url,
+      hash: (v.proof as any).hash
+    } : undefined
+  }))
+
   return (
     <div className="container mx-auto py-8 px-4">
-      <EntityViewer 
+      <EntityViewer
         entity={{
           ...data.entity,
-          verifications: data.verifications
-        }} 
+          verifications: convertedVerifications
+        }}
         relations={allRelations}
       />
     </div>
