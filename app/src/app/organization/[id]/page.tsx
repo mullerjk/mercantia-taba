@@ -1,5 +1,4 @@
-"use client";
-
+import { Metadata } from "next";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { DockNavigation } from "@/components/dock-navigation";
@@ -9,6 +8,76 @@ import { MagicCard } from "@/components/ui/magic-card";
 import { ArrowLeft, Building2, Package, Tag, MapPin, Globe, Mail, Phone, Calendar, Star } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { JsonLd, createOrganizationJsonLd } from "@/components/seo/json-ld";
+
+interface OrganizationPageProps {
+  params: { id: string };
+}
+
+// Generate metadata for SEO
+export async function generateMetadata({ params }: OrganizationPageProps): Promise<Metadata> {
+  try {
+    // Fetch organization data for metadata
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/entities?type=schema:Organization`, {
+      cache: 'force-cache'
+    });
+
+    if (!response.ok) {
+      return {
+        title: 'Organização não encontrada | Mercantia',
+        description: 'A organização que você está procurando não foi encontrada.'
+      };
+    }
+
+    const orgs = await response.json();
+    const org = orgs.find((o: any) => o.id === params.id);
+
+    if (!org) {
+      return {
+        title: 'Organização não encontrada | Mercantia',
+        description: 'A organização que você está procurando não foi encontrada.'
+      };
+    }
+
+    const title = `${org.name} | Mercantia`;
+    const description = org.properties?.description || org.description || `Conheça ${org.name}, uma organização verificada no marketplace Mercantia.`;
+
+    return {
+      title,
+      description,
+      keywords: [org.name, org.properties?.orgType || 'organização', 'empresa', 'marketplace', 'schema.org', 'verificado'],
+      openGraph: {
+        title,
+        description,
+        url: `https://mercantia.app/organization/${org.id}`,
+        siteName: 'Mercantia',
+        images: [
+          {
+            url: org.properties?.logo || '/default-organization.jpg',
+            width: 1200,
+            height: 630,
+            alt: org.name,
+          }
+        ],
+        locale: 'pt_BR',
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [org.properties?.logo || '/default-organization.jpg'],
+      },
+    };
+  } catch (error) {
+    return {
+      title: 'Organização | Mercantia',
+      description: 'Explore organizações verificadas no marketplace Mercantia.'
+    };
+  }
+}
+
+"use client";
 
 interface OrganizationData {
   id: string;
@@ -128,173 +197,185 @@ export default function OrganizationPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="relative w-full p-8 pb-4">
-        <div className="max-w-6xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('organization.backToMarketplace')}
-          </Button>
+  // Create JSON-LD structured data
+  const organizationJsonLd = createOrganizationJsonLd({
+    id: organization.id,
+    name: organization.name,
+    description: organization.properties.description || organization.description,
+    url: organization.properties.url,
+    logo: undefined, // Logo não está na interface atual
+    address: organization.properties.address,
+    foundingDate: organization.properties.foundingDate
+  });
 
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Building2 className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold">{organization.name}</h1>
-              <Badge className="mt-2">{organization.properties.orgType || 'Organization'}</Badge>
+  return (
+    <>
+      <JsonLd data={organizationJsonLd} />
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Header */}
+        <div className="relative w-full p-8 pb-4">
+          <div className="max-w-6xl mx-auto">
+            <Button
+              variant="ghost"
+              onClick={() => router.back()}
+              className="mb-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t('organization.backToMarketplace')}
+            </Button>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold">{organization.name}</h1>
+                <Badge className="mt-2">{organization.properties.orgType || 'Organization'}</Badge>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Organization Details */}
-      <div className="w-full px-8 pb-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Info */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="bg-background border border-border rounded-lg p-6">
-                <h2 className="text-2xl font-bold mb-4">{t('organization.about')}</h2>
-                <p className="text-muted-foreground mb-6">
-                  {organization.properties.description || organization.description || t('organization.noDescription')}
-                </p>
+        {/* Organization Details */}
+        <div className="w-full px-8 pb-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Main Info */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-background border border-border rounded-lg p-6">
+                  <h2 className="text-2xl font-bold mb-4">{t('organization.about')}</h2>
+                  <p className="text-muted-foreground mb-6">
+                    {organization.properties.description || organization.description || t('organization.noDescription')}
+                  </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {organization.properties.url && (
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-muted-foreground" />
-                      <a
-                        href={organization.properties.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-foreground hover:underline"
-                      >
-                        {t('organization.visitWebsite')}
-                      </a>
-                    </div>
-                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {organization.properties.url && (
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        <a
+                          href={organization.properties.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-foreground hover:underline"
+                        >
+                          {t('organization.visitWebsite')}
+                        </a>
+                      </div>
+                    )}
 
-                  {organization.properties.foundingDate && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span>{t('organization.founded')} {organization.properties.foundingDate}</span>
-                    </div>
-                  )}
+                    {organization.properties.foundingDate && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span>{t('organization.founded')} {organization.properties.foundingDate}</span>
+                      </div>
+                    )}
 
-                  {organization.properties.contactPoint?.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-muted-foreground" />
-                      <span>{organization.properties.contactPoint.email}</span>
-                    </div>
-                  )}
+                    {organization.properties.contactPoint?.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        <span>{organization.properties.contactPoint.email}</span>
+                      </div>
+                    )}
 
-                  {organization.properties.contactPoint?.telephone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span>{organization.properties.contactPoint.telephone}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Departments */}
-              <div className="bg-background border border-border rounded-lg p-6">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Tag className="w-5 h-5 text-muted-foreground" />
-                  {t('organization.departments')} ({departments.length})
-                </h3>
-
-                {departments.length === 0 ? (
-                  <p className="text-muted-foreground">{t('organization.noDepartments')}</p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {departments.map((department) => (
-                      <Link key={department} href={`/department/${encodeURIComponent(department)}`}>
-                        <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{department}</span>
-                            <Badge variant="secondary">
-                              {products.filter(p => p.category === department).length} {t('organization.products').toLowerCase()}
-                            </Badge>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Products */}
-              <div className="bg-background border border-border rounded-lg p-6">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-muted-foreground" />
-                  {t('organization.products')} ({products.length})
-                </h3>
-
-                {products.length === 0 ? (
-                  <p className="text-muted-foreground">{t('organization.noProducts')}</p>
-                ) : (
-                  <div className="space-y-3">
-                    {products.slice(0, 5).map((product) => (
-                      <Link key={product.id} href={`/product/${product.id}`}>
-                        <div className="p-3 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{product.name}</p>
-                              <p className="text-sm text-muted-foreground">{product.category}</p>
-                            </div>
-                            {product.price && (
-                              <span className="font-semibold text-lg ml-2">
-                                ${product.price}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                    {products.length > 5 && (
-                      <p className="text-sm text-muted-foreground text-center pt-2">
-                        {t('organization.moreProducts', `And ${products.length - 5} more products...`)}
-                      </p>
+                    {organization.properties.contactPoint?.telephone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-muted-foreground" />
+                        <span>{organization.properties.contactPoint.telephone}</span>
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* Address */}
-              {organization.properties.address && (
+                {/* Departments */}
                 <div className="bg-background border border-border rounded-lg p-6">
                   <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-muted-foreground" />
-                    {t('organization.location')}
+                    <Tag className="w-5 h-5 text-muted-foreground" />
+                    {t('organization.departments')} ({departments.length})
                   </h3>
-                  <p className="text-muted-foreground">
-                    {organization.properties.address}
-                  </p>
+
+                  {departments.length === 0 ? (
+                    <p className="text-muted-foreground">{t('organization.noDepartments')}</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {departments.map((department) => (
+                        <Link key={department} href={`/department/${encodeURIComponent(department)}`}>
+                          <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">{department}</span>
+                              <Badge variant="secondary">
+                                {products.filter(p => p.category === department).length} {t('organization.products').toLowerCase()}
+                              </Badge>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                {/* Products */}
+                <div className="bg-background border border-border rounded-lg p-6">
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-muted-foreground" />
+                    {t('organization.products')} ({products.length})
+                  </h3>
+
+                  {products.length === 0 ? (
+                    <p className="text-muted-foreground">{t('organization.noProducts')}</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {products.slice(0, 5).map((product) => (
+                        <Link key={product.id} href={`/product/${product.id}`}>
+                          <div className="p-3 border border-border rounded-lg hover:bg-muted transition-colors cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{product.name}</p>
+                                <p className="text-sm text-muted-foreground">{product.category}</p>
+                              </div>
+                              {product.price && (
+                                <span className="font-semibold text-lg ml-2">
+                                  ${product.price}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                      {products.length > 5 && (
+                        <p className="text-sm text-muted-foreground text-center pt-2">
+                          {t('organization.moreProducts', `And ${products.length - 5} more products...`)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Address */}
+                {organization.properties.address && (
+                  <div className="bg-background border border-border rounded-lg p-6">
+                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                      {t('organization.location')}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {organization.properties.address}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Dock Navigation */}
+        <DockNavigation
+          showSidebar={showSidebar}
+          onToggleSidebar={toggleSidebar}
+        />
       </div>
-
-
-
-      {/* Dock Navigation */}
-      <DockNavigation
-        showSidebar={showSidebar}
-        onToggleSidebar={toggleSidebar}
-      />
-    </div>
+    </>
   );
 }

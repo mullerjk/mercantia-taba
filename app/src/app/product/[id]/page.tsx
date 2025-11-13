@@ -1,5 +1,75 @@
 "use client";
 
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+interface ProductPageProps {
+  params: { id: string };
+}
+
+// Generate metadata for SEO
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  try {
+    // Fetch product data for metadata
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/marketplace`, {
+      cache: 'force-cache' // Cache for build time
+    });
+
+    if (!response.ok) {
+      return {
+        title: 'Produto não encontrado | Mercantia',
+        description: 'O produto que você está procurando não foi encontrado.'
+      };
+    }
+
+    const products = await response.json();
+    const product = products.find((p: any) => p.id === params.id);
+
+    if (!product) {
+      return {
+        title: 'Produto não encontrado | Mercantia',
+        description: 'O produto que você está procurando não foi encontrado.'
+      };
+    }
+
+    const title = `${product.name} | Mercantia`;
+    const description = product.description?.substring(0, 160) || `Compre ${product.name} no marketplace Mercantia com dados Schema.org verificados.`;
+
+    return {
+      title,
+      description,
+      keywords: [product.name, product.category, 'produto', 'mercado', 'schema.org', 'verificado'],
+      openGraph: {
+        title,
+        description,
+        url: `https://mercantia.app/product/${product.id}`,
+        siteName: 'Mercantia',
+        images: [
+          {
+            url: product.image || '/default-product.jpg',
+            width: 1200,
+            height: 630,
+            alt: product.name,
+          }
+        ],
+        locale: 'pt_BR',
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [product.image || '/default-product.jpg'],
+      },
+    };
+  } catch (error) {
+    return {
+      title: 'Produto | Mercantia',
+      description: 'Explore produtos verificados no marketplace Mercantia.'
+    };
+  }
+}
+
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { DockNavigation } from "@/components/dock-navigation";
@@ -10,6 +80,7 @@ import { ArrowLeft, Package, Tag, Building2, ShoppingCart, Star, Image as ImageI
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { JsonLd, createProductJsonLd } from "@/components/seo/json-ld";
 
 interface ProductData {
   id: string;
@@ -130,31 +201,45 @@ export default function ProductPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="relative w-full p-8 pb-4">
-        <div className="max-w-6xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('product.backToMarketplace')}
-          </Button>
+  // Create JSON-LD structured data
+  const productJsonLd = createProductJsonLd({
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    image: product.image,
+    price: product.price,
+    category: product.category,
+    brand: organization?.name,
+    sku: product.id
+  });
 
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Package className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold">{product.name}</h1>
-              <Badge className="mt-2">{product.category}</Badge>
+  return (
+    <>
+      <JsonLd data={productJsonLd} />
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Header */}
+        <div className="relative w-full p-8 pb-4">
+          <div className="max-w-6xl mx-auto">
+            <Button
+              variant="ghost"
+              onClick={() => router.back()}
+              className="mb-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t('product.backToMarketplace')}
+            </Button>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Package className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold">{product.name}</h1>
+                <Badge className="mt-2">{product.category}</Badge>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       {/* Product Details */}
       <div className="w-full px-8 pb-8">
@@ -329,11 +414,12 @@ export default function ProductPage() {
 
 
 
-      {/* Dock Navigation */}
-      <DockNavigation
-        showSidebar={showSidebar}
-        onToggleSidebar={toggleSidebar}
-      />
-    </div>
+        {/* Dock Navigation */}
+        <DockNavigation
+          showSidebar={showSidebar}
+          onToggleSidebar={toggleSidebar}
+        />
+      </div>
+    </>
   );
 }
