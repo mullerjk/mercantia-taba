@@ -2,6 +2,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CartProvider } from "@/contexts/CartContext";
 import { TranslationProvider } from "@/contexts/TranslationContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata = {
   title: 'World Explorer - Mercantia TABA',
@@ -18,9 +19,11 @@ export default function RootLayout({
       <body className="bg-background">
         <ThemeProvider>
           <TranslationProvider>
-            <CartProvider>
-              {children}
-            </CartProvider>
+            <AuthProvider>
+              <CartProvider>
+                {children}
+              </CartProvider>
+            </AuthProvider>
           </TranslationProvider>
         </ThemeProvider>
       </body>

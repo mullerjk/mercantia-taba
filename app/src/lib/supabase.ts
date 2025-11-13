@@ -1,13 +1,16 @@
-// Supabase client configuration
-import { createClient } from '@supabase/supabase-js'
+// Supabase client configuration for browser (client-side only)
+import { createBrowserClient } from '@supabase/ssr'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQw54bKJhHZXw6WYtS5A8'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQw54bKJhHZXw6WYtS5A8'
 
-// Create Supabase client
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Create Supabase client for browser (client-side)
+export function createClient() {
+  return createBrowserClient(supabaseUrl, supabaseAnonKey)
+}
 
-export { supabase }
+// Legacy client for backward compatibility (will be removed)
+export const supabase = createClient()
 
 // Database types
 export interface Database {

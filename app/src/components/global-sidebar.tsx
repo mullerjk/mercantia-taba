@@ -1,9 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { SchemaExplorerTree } from "./schema-explorer-tree";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogOut, User, Settings, ShoppingBag, ShoppingCart } from "lucide-react";
 
 interface GlobalSidebarProps {
   isVisible: boolean;
@@ -17,6 +24,13 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, onEntitySelec
   const [currentRoute, setCurrentRoute] = useState<string>("thing");
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
   const { t } = useTranslation();
+  const { user, profile, signOut } = useAuth();
+  const { state } = useCart();
+
+  const handleSignOut = async () => {
+    await signOut();
+    onClose();
+  };
 
   // Handle escape key
   useEffect(() => {
@@ -74,7 +88,39 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, onEntitySelec
           
           {/* Header */}
           <div className="p-4 border-b border-border">
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-between">
+              {/* User Section */}
+              <div className="flex items-center gap-3">
+                {user ? (
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={profile?.avatar_url || ''} />
+                      <AvatarFallback>
+                        {profile?.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">
+                        {profile?.full_name || 'User'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {profile?.role || 'user'}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Link href="/auth/login">
+                      <Button variant="outline" size="sm">
+                        <User className="w-4 h-4 mr-2" />
+                        Sign In
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Close Button */}
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-secondary rounded-lg transition-colors"
@@ -85,7 +131,49 @@ export function GlobalSidebar({ isVisible, onClose, onRouteChange, onEntitySelec
                 </svg>
               </button>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">
+
+            {/* User Actions */}
+            {user && (
+              <div className="mt-3 flex gap-2 flex-wrap">
+                <Link href="/marketplace">
+                  <Button variant="ghost" size="sm" className="h-8">
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    Marketplace
+                  </Button>
+                </Link>
+                {state.itemCount > 0 && (
+                  <Link href="/checkout">
+                    <Button variant="ghost" size="sm" className="h-8 relative">
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Cart
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                      >
+                        {state.itemCount}
+                      </Badge>
+                    </Button>
+                  </Link>
+                )}
+                <Link href="/settings">
+                  <Button variant="ghost" size="sm" className="h-8">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="h-8 text-destructive hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+            )}
+
+            <div className="mt-3 text-xs text-muted-foreground">
               {t('sidebar.current')} <code className="bg-muted px-1 rounded text-foreground">{currentRoute}</code>
               {selectedEntity && (
                 <div className="mt-1">

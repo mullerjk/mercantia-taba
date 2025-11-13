@@ -8,6 +8,7 @@ import {
   Settings,
   User,
   BarChart3,
+  ShoppingBag,
   ShoppingCart,
   Package,
   Users,
@@ -134,28 +135,28 @@ function EnhancedSchemaTree({ onEntitySelect }: { onEntitySelect?: (entityName: 
 
     return (
       <div key={entity.id}>
-        <div
-          className={`flex items-center gap-2 py-2 px-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-md transition-colors ${
-            level > 0 ? 'ml-4' : ''
-          }`}
-          onClick={() => handleEntitySelect(entity.id)}
-        >
-          {hasChildren ? (
-            <button
-              className="w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleExpansion(entity.id);
-              }}
-            >
-              {entity.isExpanded ? '▼' : '▶'}
-            </button>
-          ) : (
-            <div className="w-4" />
-          )}
-          <Globe className="w-4 h-4 text-muted-foreground" />
-          <span className="truncate">{entity.name}</span>
-        </div>
+        <SidebarMenuItem>
+          <div
+            className={`flex items-center gap-2 py-1.5 px-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-md transition-colors w-full ${
+              level > 0 ? 'ml-4' : ''
+            }`}
+            onClick={() => handleEntitySelect(entity.id)}
+          >
+            <Globe className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+            <span className="truncate font-medium flex-1">{entity.name}</span>
+            {hasChildren && (
+              <button
+                className="w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 ml-auto"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpansion(entity.id);
+                }}
+              >
+                <ChevronRight className={`w-3 h-3 transition-transform ${entity.isExpanded ? 'rotate-90' : ''}`} />
+              </button>
+            )}
+          </div>
+        </SidebarMenuItem>
 
         {hasChildren && entity.isExpanded && (
           <div className="ml-2">
@@ -177,7 +178,7 @@ function EnhancedSchemaTree({ onEntitySelect }: { onEntitySelect?: (entityName: 
           className="pl-8 h-8 text-sm"
         />
       </div>
-      <div className="space-y-1 max-h-64 overflow-y-auto">
+      <div className="space-y-1 list-none">
         {filteredEntities.map((entity) => renderEntity(entity))}
       </div>
     </div>
@@ -277,10 +278,7 @@ export default function MercantiaSuperAdmin({ initialPage }: { initialPage?: str
   const [notifications] = useState(3); // Mock notifications count
   const [currentPage, setCurrentPage] = useState(initialPage || 'dashboard');
 
-  // Collapsible state for sidebar groups
-  const [mainNavOpen, setMainNavOpen] = useState(true);
-  const [businessNavOpen, setBusinessNavOpen] = useState(true);
-  const [schemaNavOpen, setSchemaNavOpen] = useState(false);
+  // Sidebar compact mode with persistence
 
   // Sidebar compact mode with persistence
   const [sidebarCompact, setSidebarCompact] = useState(() => {
@@ -349,8 +347,8 @@ export default function MercantiaSuperAdmin({ initialPage }: { initialPage?: str
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        {/* Enhanced Sidebar */}
-        <Sidebar className={`hidden md:flex border-r bg-card transition-all duration-300 flex-col h-screen ${
+        {/* Enhanced Sidebar - Fixed position */}
+        <Sidebar className={`hidden md:flex border-r bg-card transition-all duration-300 flex-col fixed left-0 top-0 h-screen z-10 ${
           sidebarCompact ? 'w-16' : 'w-64'
         }`}>
           <SidebarHeader className="border-b flex-shrink-0">
@@ -372,219 +370,120 @@ export default function MercantiaSuperAdmin({ initialPage }: { initialPage?: str
           </SidebarHeader>
 
           <SidebarContent className="px-2 flex-1 overflow-y-auto">
-            {/* Compact Navigation Icons - Only visible when sidebar is compact */}
-            {sidebarCompact && (
-              <div className="flex flex-col items-center gap-2 py-4">
-                <button
-                  onClick={() => navigateToPage('dashboard')}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                    currentPage === 'dashboard'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-accent hover:text-accent-foreground'
-                  }`}
-                  title="Dashboard"
-                >
-                  <Home className="w-5 h-5" />
-                </button>
 
-                <button
-                  onClick={() => navigateToPage('marketplace')}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                    currentPage === 'marketplace'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-accent hover:text-accent-foreground'
-                  }`}
-                  title="Marketplace"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                </button>
 
-                <button
-                  onClick={() => navigateToPage('inventory')}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                    currentPage === 'inventory'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-accent hover:text-accent-foreground'
-                  }`}
-                  title="Inventário"
-                >
-                  <Package className="w-5 h-5" />
-                </button>
+            {/* Main Navigation */}
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <button
+                      onClick={() => navigateToPage('dashboard')}
+                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                        currentPage === 'dashboard'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      <Home className="w-5 h-5" />
+                      {!sidebarCompact && <span className="font-medium">Dashboard</span>}
+                    </button>
+                  </SidebarMenuItem>
 
-                <button
-                  onClick={() => navigateToPage('finances')}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                    currentPage === 'finances'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-accent hover:text-accent-foreground'
-                  }`}
-                  title="Finanças"
-                >
-                  <BarChart3 className="w-5 h-5" />
-                </button>
+                  <SidebarMenuItem>
+                    <button
+                      onClick={() => navigateToPage('marketplace')}
+                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                        currentPage === 'marketplace'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      <ShoppingBag className="w-5 h-5" />
+                      {!sidebarCompact && <span className="font-medium">Marketplace</span>}
+                    </button>
+                  </SidebarMenuItem>
 
-                <div className="w-px h-8 bg-border my-2"></div>
+                  <SidebarMenuItem>
+                    <button
+                      onClick={() => navigateToPage('inventory')}
+                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                        currentPage === 'inventory'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      <Package className="w-5 h-5" />
+                      {!sidebarCompact && <span className="font-medium">Inventário</span>}
+                    </button>
+                  </SidebarMenuItem>
 
-                <button
-                  onClick={() => navigateToPage('relationships')}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                    currentPage === 'relationships'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-accent hover:text-accent-foreground'
-                  }`}
-                  title="Relacionamentos"
-                >
-                  <Users className="w-5 h-5" />
-                </button>
+                  <SidebarMenuItem>
+                    <button
+                      onClick={() => navigateToPage('finances')}
+                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                        currentPage === 'finances'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      <BarChart3 className="w-5 h-5" />
+                      {!sidebarCompact && <span className="font-medium">Finanças</span>}
+                    </button>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-                <button
-                  onClick={() => navigateToPage('account')}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
-                    currentPage === 'account'
-                      ? 'bg-accent text-accent-foreground'
-                      : 'hover:bg-accent hover:text-accent-foreground'
-                  }`}
-                  title="Minha Conta"
-                >
-                  <User className="w-5 h-5" />
-                </button>
-              </div>
-            )}
+            {/* Separator */}
+            {!sidebarCompact && <div className="mx-2 my-4 h-px bg-border" />}
 
-            {/* Main Navigation - Collapsible */}
-            <Collapsible open={mainNavOpen && !sidebarCompact} onOpenChange={setMainNavOpen}>
-              <SidebarGroup>
-                {!sidebarCompact && (
-                  <CollapsibleTrigger asChild>
-                    <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors flex items-center justify-between">
-                      <span>Navegação Principal</span>
-                      <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${mainNavOpen ? 'rotate-90' : ''}`} />
-                    </SidebarGroupLabel>
-                  </CollapsibleTrigger>
-                )}
-                <CollapsibleContent>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <button
-                          onClick={() => navigateToPage('dashboard')}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
-                            currentPage === 'dashboard'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <Home className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Dashboard</span>}
-                        </button>
-                      </SidebarMenuItem>
+            {/* Business Management */}
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <button
+                      onClick={() => navigateToPage('relationships')}
+                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                        currentPage === 'relationships'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      <Users className="w-5 h-5" />
+                      {!sidebarCompact && <span className="font-medium">Relacionamentos</span>}
+                    </button>
+                  </SidebarMenuItem>
 
-                      <SidebarMenuItem>
-                        <button
-                          onClick={() => navigateToPage('marketplace')}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
-                            currentPage === 'marketplace'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <ShoppingCart className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Marketplace</span>}
-                        </button>
-                      </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <button
+                      onClick={() => navigateToPage('account')}
+                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                        currentPage === 'account'
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    >
+                      <User className="w-5 h-5" />
+                      {!sidebarCompact && <span className="font-medium">Minha Conta</span>}
+                    </button>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-                      <SidebarMenuItem>
-                        <button
-                          onClick={() => navigateToPage('inventory')}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
-                            currentPage === 'inventory'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <Package className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Inventário</span>}
-                        </button>
-                      </SidebarMenuItem>
+            {/* Separator */}
+            {!sidebarCompact && <div className="mx-2 my-4 h-px bg-border" />}
 
-                      <SidebarMenuItem>
-                        <button
-                          onClick={() => navigateToPage('finances')}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
-                            currentPage === 'finances'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <BarChart3 className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Finanças</span>}
-                        </button>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </SidebarGroup>
-            </Collapsible>
+            {/* Schema Explorer - Hidden when compact */}
+            {!sidebarCompact && (
+              <>
+                {/* Separator */}
+                <div className="mx-2 my-4 h-px bg-border" />
 
-            {/* Business Management - Collapsible */}
-            <Collapsible open={businessNavOpen && !sidebarCompact} onOpenChange={setBusinessNavOpen}>
-              <SidebarGroup>
-                {!sidebarCompact && (
-                  <CollapsibleTrigger asChild>
-                    <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors flex items-center justify-between">
-                      <span>Gestão Empresarial</span>
-                      <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${businessNavOpen ? 'rotate-90' : ''}`} />
-                    </SidebarGroupLabel>
-                  </CollapsibleTrigger>
-                )}
-                <CollapsibleContent>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <button
-                          onClick={() => navigateToPage('relationships')}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
-                            currentPage === 'relationships'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <Users className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Relacionamentos</span>}
-                        </button>
-                      </SidebarMenuItem>
-
-                      <SidebarMenuItem>
-                        <button
-                          onClick={() => navigateToPage('account')}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors w-full text-left ${
-                            currentPage === 'account'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <User className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Minha Conta</span>}
-                        </button>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </SidebarGroup>
-            </Collapsible>
-
-            {/* Schema Explorer - Collapsible */}
-            <Collapsible open={schemaNavOpen && !sidebarCompact} onOpenChange={setSchemaNavOpen}>
-              <SidebarGroup>
-                {!sidebarCompact && (
-                  <CollapsibleTrigger asChild>
-                    <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors flex items-center justify-between">
-                      <span>Explorador Schema.org</span>
-                      <ChevronRight className={`w-3 h-3 transition-transform duration-200 ${schemaNavOpen ? 'rotate-90' : ''}`} />
-                    </SidebarGroupLabel>
-                  </CollapsibleTrigger>
-                )}
-                <CollapsibleContent>
+                {/* Schema Explorer */}
+                <SidebarGroup>
                   <SidebarGroupContent>
                     <div className="px-1">
                       <EnhancedSchemaTree
@@ -594,9 +493,9 @@ export default function MercantiaSuperAdmin({ initialPage }: { initialPage?: str
                       />
                     </div>
                   </SidebarGroupContent>
-                </CollapsibleContent>
-              </SidebarGroup>
-            </Collapsible>
+                </SidebarGroup>
+              </>
+            )}
           </SidebarContent>
 
           <SidebarFooter className="border-t flex-shrink-0 bg-card">
@@ -663,7 +562,9 @@ export default function MercantiaSuperAdmin({ initialPage }: { initialPage?: str
         </Sidebar>
 
         {/* Main Content Area */}
-        <div className="flex flex-1 flex-col">
+        <div className={`flex flex-1 flex-col transition-all duration-300 ${
+          sidebarCompact ? 'md:ml-16' : 'md:ml-64'
+        }`}>
           {/* Enhanced Header */}
           <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-card px-6">
             {/* Sidebar Toggle Button - Hidden on mobile, visible on tablet/desktop */}
