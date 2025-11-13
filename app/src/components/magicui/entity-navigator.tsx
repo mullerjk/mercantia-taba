@@ -7,12 +7,12 @@ import { Badge } from "../ui/badge"
 import { cn } from "@/lib/utils"
 
 interface EntityNavigatorProps {
-  entities?: any[]
+  entities?: unknown[]
   className?: string
   showSidebar?: boolean
 }
 
-export default function EntityNavigator({ entities, className, showSidebar = true }: EntityNavigatorProps) {
+export default function EntityNavigator({ className, showSidebar = true }: EntityNavigatorProps) {
   const [currentRoute, setCurrentRoute] = useState<string>("thing")
 
   const handleRouteChange = (route: string) => {

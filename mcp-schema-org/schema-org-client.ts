@@ -27,7 +27,7 @@ export class SchemaOrgClient {
     if (this.initialized) return;
 
     try {
-      console.error('Fetching schema.org data...');
+      console.log('Fetching schema.org data...');
       const response = await axios.get(this.SCHEMA_URL);
       const data = response.data;
 
@@ -45,7 +45,7 @@ export class SchemaOrgClient {
       }
 
       this.initialized = true;
-      console.error('Schema.org data loaded successfully');
+      console.log('Schema.org data loaded successfully');
     } catch (error) {
       console.error('Error loading schema.org data:', error);
       throw error;
@@ -171,7 +171,11 @@ export class SchemaOrgClient {
       }
     }
 
-    return properties.sort((a, b) => a.name.localeCompare(b.name));
+    return properties.sort((a, b) => {
+      const nameA = typeof a.name === 'string' ? a.name : String(a.name || '');
+      const nameB = typeof b.name === 'string' ? b.name : String(b.name || '');
+      return nameA.localeCompare(nameB);
+    });
   }
 
   async generateExample(typeName: string, customProperties?: Record<string, any>): Promise<any> {
@@ -215,21 +219,45 @@ export class SchemaOrgClient {
 
   private findSubTypes(typeId: string): any[] {
     const subTypes: any[] = [];
+    
+    // Normalize the typeId to ensure correct comparison
+    const normalizedTypeId = typeId.startsWith('schema:') ? typeId : `schema:${typeId}`;
 
     for (const [key, value] of this.schemaData.entries()) {
-      if (!value['@type'] || !Array.isArray(value['@type'])) continue;
-      if (!value['@type'].includes('rdfs:Class')) continue;
-
-      const superClasses = this.normalizeToArray(value['rdfs:subClassOf']);
-      if (superClasses.some((sc: any) => sc['@id'] === typeId)) {
+      // Only process rdfs:Class types (handle both string and array)
+      const types = value['@type'];
+      if (!types) continue;
+      const isClass = Array.isArray(types) ? types.includes('rdfs:Class') : types === 'rdfs:Class';
+      if (!isClass) continue;
+      
+      // Get the superclasses of this type
+      const subClassOf = value['rdfs:subClassOf'];
+      if (!subClassOf) continue;
+      
+      // Handle both object format {@ id: string} and string format "schema:Type"
+      const superClasses = this.normalizeToArray(subClassOf);
+      
+      // Check if any superclass matches our target typeId
+      const isDirectSubtype = superClasses.some((sc: any) => {
+        // sc can be either a string or an object with @id
+        const scId = typeof sc === 'string' ? sc : sc['@id'];
+        return scId === normalizedTypeId;
+      });
+      
+      if (isDirectSubtype) {
         subTypes.push({
           name: value['rdfs:label'],
           id: value['@id'],
         });
       }
     }
-
+    
     return subTypes;
+  }
+
+  private getTypeLabelById(typeId: string): string | null {
+    const type = this.schemaData.get(typeId);
+    return type ? type['rdfs:label'] || null : null;
   }
 
   private formatProperty(prop: any): any {

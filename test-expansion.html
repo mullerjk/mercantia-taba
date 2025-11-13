@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Collapsible</title></head>
+<body>
+<h1>Testing if onClick is being called</h1>
+<div id="log"></div>
+<script>
+  const log = (msg) => {
+    const div = document.createElement('div');
+    div.textContent = new Date().toISOString() + ': ' + msg;
+    document.getElementById('log').appendChild(div);
+    console.log(msg);
+  };
+  
+  document.addEventListener('click', (e) => {
+    log('Document click: ' + e.target.tagName + ' ' + e.target.className);
+  });
+  
+  log('Page loaded, click anywhere to test');
+</script>
+</body>
+</html>

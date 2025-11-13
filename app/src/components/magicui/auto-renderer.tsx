@@ -2,12 +2,24 @@ import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Badge } from "../ui/badge"
 import { Separator } from "../ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
-import { Marquee } from "./marquee"
 import BlurFade from "./blur-fade"
 import { FlickeringGrid } from "./flickering-grid"
 import { type SchemaEntity } from "../../lib/utils"
-import { mockSchemaData, type MockEntity } from "../../data/mock-schemas"
+
+// MockEntity type for backward compatibility
+interface MockEntity {
+  id: string
+  name: string
+  type: string
+  description: string
+  fields: Array<{
+    name: string
+    type: string
+    required: boolean
+    description: string
+  }>
+  example?: unknown
+}
 
 interface AutoRendererProps {
   entity: SchemaEntity
@@ -21,7 +33,7 @@ interface FieldRendererProps {
     required: boolean
     description: string
   }
-  value: any
+  value: unknown
   fieldIndex: number
 }
 
@@ -52,14 +64,14 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, fieldIndex 
     }
   }
 
-  const renderFieldValue = (val: any, type: string) => {
+  const renderFieldValue = (val: unknown, type: string) => {
     if (val === null || val === undefined) {
       return <span className="text-muted-foreground italic">Not provided</span>
     }
 
     if (type.toLowerCase() === 'date') {
       try {
-        const date = new Date(val)
+        const date = new Date(val as string | number)
         return (
           <span className="font-mono text-sm">
             {date.toLocaleDateString('en-US', {
@@ -70,19 +82,19 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, fieldIndex 
           </span>
         )
       } catch {
-        return <span className="font-mono text-sm">{val}</span>
+        return <span className="font-mono text-sm">{String(val)}</span>
       }
     }
 
     if (type.toLowerCase() === 'url') {
       return (
         <a
-          href={val}
+          href={String(val)}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 hover:text-blue-800 underline"
         >
-          {val}
+          {String(val)}
         </a>
       )
     }
@@ -93,7 +105,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, fieldIndex 
           <div className="flex flex-wrap gap-1">
             {val.map((item, idx) => (
               <Badge key={idx} variant="secondary" className="text-xs">
-                {item}
+                {String(item)}
               </Badge>
             ))}
           </div>
@@ -105,10 +117,10 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, fieldIndex 
       if (typeof val === 'object' && val !== null) {
         return (
           <div className="text-sm space-y-1">
-            {Object.entries(val).map(([key, val]) => (
+            {Object.entries(val).map(([key, value]) => (
               <div key={key} className="flex justify-between">
                 <span className="font-medium capitalize">{key}:</span>
-                <span className="text-muted-foreground">{String(val)}</span>
+                <span className="text-muted-foreground">{String(value)}</span>
               </div>
             ))}
           </div>
@@ -119,10 +131,10 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, fieldIndex 
     if (type.toLowerCase().includes('email')) {
       return (
         <a
-          href={`mailto:${val}`}
+          href={`mailto:${String(val)}`}
           className="text-blue-600 hover:text-blue-800 underline"
         >
-          {val}
+          {String(val)}
         </a>
       )
     }
@@ -130,10 +142,10 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, fieldIndex 
     if (type.toLowerCase().includes('phone')) {
       return (
         <a
-          href={`tel:${val}`}
+          href={`tel:${String(val)}`}
           className="text-blue-600 hover:text-blue-800 underline"
         >
-          {val}
+          {String(val)}
         </a>
       )
     }
@@ -204,9 +216,7 @@ export default function AutoRenderer({ entity, mockEntity }: AutoRendererProps) 
   const description = getDescriptionForEntity(entity.type)
 
   // Find mock data for this entity type
-  const mockData = mockEntity || mockSchemaData.find(m => 
-    m.entity.type.toLowerCase() === entity.type.toLowerCase()
-  )
+  const mockData = mockEntity || undefined // No more static mock data - use MCP
 
   return (
     <BlurFade delay={0.1}>
@@ -236,11 +246,11 @@ export default function AutoRenderer({ entity, mockEntity }: AutoRendererProps) 
               {/* Render fields with mock data */}
               <div className="space-y-6">
                 <h3 className="text-xl font-semibold">Entity Details</h3>
-                {mockData?.entity.fields.map((field, index) => (
+                {mockData?.fields.map((field, index) => (
                   <FieldRenderer
                     key={field.name}
                     field={field}
-                    value={field.mockValue}
+                    value={mockData.example?.[field.name as keyof typeof mockData.example]}
                     fieldIndex={index}
                   />
                 ))}
