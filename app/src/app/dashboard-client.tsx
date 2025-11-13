@@ -70,6 +70,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { SchemaExplorerTree } from "@/components/schema-explorer-tree";
 
 // Enhanced Schema Tree Component with better UX
@@ -236,8 +237,32 @@ function PageLoader() {
   );
 }
 
-// Enhanced page content renderer with better routing
+// Enhanced page content renderer with better routing and auth protection
 function PageContent({ currentPage }: { currentPage: string }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // Pages that require authentication
+  const protectedPages = ['dashboard', 'account', 'relationships', 'inventory', 'finances', 'checkout'];
+
+  // If trying to access protected page without authentication
+  if (protectedPages.includes(currentPage) && !loading && !user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="text-6xl">🔒</div>
+          <h2 className="text-2xl font-bold">Acesso Restrito</h2>
+          <p className="text-muted-foreground max-w-md">
+            Você precisa estar logado para acessar esta página. Faça login para continuar.
+          </p>
+          <Button onClick={() => router.push('/auth/login')}>
+            Fazer Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   switch (currentPage) {
     case 'dashboard':
       return <DashboardHome />;
@@ -275,6 +300,7 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { signOut, user, loading } = useAuth();
   const [notifications] = useState(3); // Mock notifications count
   const [currentPage, setCurrentPage] = useState(initialPage || 'dashboard');
 
@@ -309,6 +335,13 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
       setCurrentPage(route);
     }
   }, [pathname, searchParams]);
+
+  // Redirect to marketplace if user is not logged in and trying to access dashboard
+  useEffect(() => {
+    if (!loading && !user && currentPage === 'dashboard') {
+      router.push('/marketplace');
+    }
+  }, [user, loading, currentPage, router]);
 
   const getPageTitle = (page: string) => {
     const titles = {
@@ -372,19 +405,22 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  <SidebarMenuItem>
-                    <button
-                      onClick={() => navigateToPage('dashboard')}
-                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
-                        currentPage === 'dashboard'
-                          ? 'bg-accent text-accent-foreground'
-                          : 'hover:bg-accent hover:text-accent-foreground'
-                      }`}
-                    >
-                      <Home className="w-5 h-5" />
-                      {!sidebarCompact && <span className="font-medium">Dashboard</span>}
-                    </button>
-                  </SidebarMenuItem>
+                  {/* Show Dashboard only for authenticated users */}
+                  {user && (
+                    <SidebarMenuItem>
+                      <button
+                        onClick={() => navigateToPage('dashboard')}
+                        className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                          currentPage === 'dashboard'
+                            ? 'bg-accent text-accent-foreground'
+                            : 'hover:bg-accent hover:text-accent-foreground'
+                        }`}
+                      >
+                        <Home className="w-5 h-5" />
+                        {!sidebarCompact && <span className="font-medium">Dashboard</span>}
+                      </button>
+                    </SidebarMenuItem>
+                  )}
 
                   <SidebarMenuItem>
                     <button
@@ -400,96 +436,105 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
                     </button>
                   </SidebarMenuItem>
 
-                  <SidebarMenuItem>
-                    <button
-                      onClick={() => navigateToPage('inventory')}
-                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
-                        currentPage === 'inventory'
-                          ? 'bg-accent text-accent-foreground'
-                          : 'hover:bg-accent hover:text-accent-foreground'
-                      }`}
-                    >
-                      <Package className="w-5 h-5" />
-                      {!sidebarCompact && <span className="font-medium">Inventário</span>}
-                    </button>
-                  </SidebarMenuItem>
+                  {/* Show other menu items only for authenticated users */}
+                  {user && (
+                    <>
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('inventory')}
+                          className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'inventory'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <Package className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Inventário</span>}
+                        </button>
+                      </SidebarMenuItem>
 
-                  <SidebarMenuItem>
-                    <button
-                      onClick={() => navigateToPage('finances')}
-                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
-                        currentPage === 'finances'
-                          ? 'bg-accent text-accent-foreground'
-                          : 'hover:bg-accent hover:text-accent-foreground'
-                      }`}
-                    >
-                      <BarChart3 className="w-5 h-5" />
-                      {!sidebarCompact && <span className="font-medium">Finanças</span>}
-                    </button>
-                  </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('finances')}
+                          className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'finances'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <BarChart3 className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Finanças</span>}
+                        </button>
+                      </SidebarMenuItem>
+                    </>
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Separator */}
-            {!sidebarCompact && <div className="mx-2 my-4 h-px bg-border" />}
-
-            {/* Business Management */}
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <button
-                      onClick={() => navigateToPage('relationships')}
-                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
-                        currentPage === 'relationships'
-                          ? 'bg-accent text-accent-foreground'
-                          : 'hover:bg-accent hover:text-accent-foreground'
-                      }`}
-                    >
-                      <Users className="w-5 h-5" />
-                      {!sidebarCompact && <span className="font-medium">Relacionamentos</span>}
-                    </button>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <button
-                      onClick={() => navigateToPage('account')}
-                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
-                        currentPage === 'account'
-                          ? 'bg-accent text-accent-foreground'
-                          : 'hover:bg-accent hover:text-accent-foreground'
-                      }`}
-                    >
-                      <User className="w-5 h-5" />
-                      {!sidebarCompact && <span className="font-medium">Minha Conta</span>}
-                    </button>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            {/* Separator */}
-            {!sidebarCompact && <div className="mx-2 my-4 h-px bg-border" />}
-
-            {/* Schema Explorer - Hidden when compact */}
-            {!sidebarCompact && (
+            {/* Business Management - Only for authenticated users */}
+            {user && (
               <>
                 {/* Separator */}
-                <div className="mx-2 my-4 h-px bg-border" />
+                {!sidebarCompact && <div className="mx-2 my-4 h-px bg-border" />}
 
-                {/* Schema Explorer */}
                 <SidebarGroup>
                   <SidebarGroupContent>
-                    <div className="px-1">
-                      <EnhancedSchemaTree
-                        onEntitySelect={(entityName) => {
-                          console.log("Entity selected in Mercantia:", entityName);
-                        }}
-                      />
-                    </div>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('relationships')}
+                          className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'relationships'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <Users className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Relacionamentos</span>}
+                        </button>
+                      </SidebarMenuItem>
+
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('account')}
+                          className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                            currentPage === 'account'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <User className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Minha Conta</span>}
+                        </button>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
                   </SidebarGroupContent>
                 </SidebarGroup>
+
+                {/* Separator */}
+                {!sidebarCompact && <div className="mx-2 my-4 h-px bg-border" />}
+
+                {/* Schema Explorer - Hidden when compact */}
+                {!sidebarCompact && (
+                  <>
+                    {/* Separator */}
+                    <div className="mx-2 my-4 h-px bg-border" />
+
+                    {/* Schema Explorer */}
+                    <SidebarGroup>
+                      <SidebarGroupContent>
+                        <div className="px-1">
+                          <EnhancedSchemaTree
+                            onEntitySelect={(entityName) => {
+                              console.log("Entity selected in Mercantia:", entityName);
+                            }}
+                          />
+                        </div>
+                      </SidebarGroupContent>
+                    </SidebarGroup>
+                  </>
+                )}
               </>
             )}
           </SidebarContent>
@@ -497,61 +542,82 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
           <SidebarFooter className="border-t flex-shrink-0 bg-card">
             <SidebarMenu>
               <SidebarMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
-                      sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
-                    }`}>
-                      <Avatar className={`${sidebarCompact ? 'h-6 w-6' : 'h-8 w-8'}`}>
-                        <AvatarImage src="/avatars/01.png" alt="User" />
-                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-xs">AM</AvatarFallback>
-                      </Avatar>
-                      {!sidebarCompact && (
-                        <div className="grid flex-1 text-left text-sm leading-tight">
-                          <span className="truncate font-medium">Antonio Müller</span>
-                          <span className="truncate text-xs text-muted-foreground">Premium Member</span>
-                        </div>
-                      )}
-                      {!sidebarCompact && <ChevronDown className="ml-auto w-4 h-4 text-muted-foreground" />}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                    side="top"
-                    align="end"
-                    sideOffset={4}
-                  >
-                    <DropdownMenuLabel className="p-0 font-normal">
-                      <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src="/avatars/01.png" alt="User" />
-                          <AvatarFallback className="bg-primary text-primary-foreground font-semibold">AM</AvatarFallback>
+                {user ? (
+                  // User is logged in - show user menu
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                        sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                      }`}>
+                        <Avatar className={`${sidebarCompact ? 'h-6 w-6' : 'h-8 w-8'}`}>
+                          <AvatarImage src={user.avatarUrl || "/avatars/01.png"} alt="User" />
+                          <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-xs">
+                            {user.fullName?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
-                        <div className="grid flex-1 text-left text-sm leading-tight">
-                          <span className="truncate font-medium">Antonio Müller</span>
-                          <span className="truncate text-xs text-muted-foreground">antonio@mercantia.app</span>
+                        {!sidebarCompact && (
+                          <div className="grid flex-1 text-left text-sm leading-tight">
+                            <span className="truncate font-medium">{user.fullName || 'User'}</span>
+                            <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                          </div>
+                        )}
+                        {!sidebarCompact && <ChevronDown className="ml-auto w-4 h-4 text-muted-foreground" />}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                      side="top"
+                      align="end"
+                      sideOffset={4}
+                    >
+                      <DropdownMenuLabel className="p-0 font-normal">
+                        <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.avatarUrl || "/avatars/01.png"} alt="User" />
+                            <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                              {user.fullName?.charAt(0) || user.email.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="grid flex-1 text-left text-sm leading-tight">
+                            <span className="truncate font-medium">{user.fullName || 'User'}</span>
+                            <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                          </div>
                         </div>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      Perfil
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Configurações
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer">
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Assinatura
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600">
-                      Sair
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Perfil
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Configurações
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Assinatura
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer text-red-600 focus:text-red-600"
+                        onClick={() => signOut()}
+                      >
+                        Sair
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  // User is not logged in - show login button
+                  <button
+                    onClick={() => router.push('/auth/login')}
+                    className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                      sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                    }`}
+                  >
+                    <User className="w-5 h-5" />
+                    {!sidebarCompact && <span className="font-medium">Fazer Login</span>}
+                  </button>
+                )}
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>

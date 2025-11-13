@@ -12,13 +12,40 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes - redirect to login if not authenticated
-  const protectedRoutes = ['/dashboard', '/settings', '/account', '/checkout']
-  const authRoutes = ['/auth/login', '/auth/register', '/auth/reset-password']
-  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
-  const isAuthRoute = authRoutes.some(route => request.nextUrl.pathname.startsWith(route))
+  const pathname = request.nextUrl.pathname
 
-  if (isProtectedRoute && !user) {
+  // Public routes - accessible without authentication
+  const publicRoutes = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/reset-password',
+    '/auth/callback',
+    '/', // Main page (dashboard with marketplace)
+  ]
+
+  // Marketplace-related routes that should be public
+  const marketplaceRoutes = [
+    '/organization/',
+    '/product/',
+    '/person/',
+    '/entity/',
+    '/department/',
+    '/api/marketplace',
+    '/api/entities',
+    '/api/schema-hierarchy'
+  ]
+
+  // Check if current route is public
+  const isPublicRoute = publicRoutes.some(route => pathname === route) ||
+                        marketplaceRoutes.some(route => pathname.startsWith(route))
+
+  // Check if current route is auth-related
+  const isAuthRoute = ['/auth/login', '/auth/register', '/auth/reset-password'].some(route =>
+    pathname.startsWith(route)
+  )
+
+  // If user is not authenticated and trying to access protected route
+  if (!user && !isPublicRoute && !isAuthRoute) {
     // Redirect to login page with return url
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
@@ -26,9 +53,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // If authenticated user tries to access auth pages, redirect to dashboard
   if (isAuthRoute && user) {
-    // Redirect authenticated users away from auth pages
-    const redirectTo = request.nextUrl.searchParams.get('redirectTo') || '/dashboard'
+    const redirectTo = request.nextUrl.searchParams.get('redirectTo') || '/'
     const url = request.nextUrl.clone()
     url.pathname = redirectTo
     return NextResponse.redirect(url)

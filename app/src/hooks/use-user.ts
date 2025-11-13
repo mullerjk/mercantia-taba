@@ -1,16 +1,16 @@
 import { useAuth } from '@/contexts/AuthContext'
 
 export function useUser() {
-  const { user, profile, loading } = useAuth()
+  const { user, loading } = useAuth()
 
   return {
     user,
-    profile,
+    profile: user, // User object now contains profile data
     loading,
     isAuthenticated: !!user,
-    isAdmin: profile?.role === 'admin',
-    isModerator: profile?.role === 'moderator',
-    isSeller: profile?.role === 'seller' || profile?.role === 'admin',
-    isBuyer: profile?.role === 'buyer' || profile?.role === 'user',
+    isAdmin: user?.role === 'admin',
+    isModerator: user?.role === 'moderator',
+    isSeller: user?.role === 'seller' || user?.role === 'admin',
+    isBuyer: user?.role === 'buyer' || user?.role === 'user',
   }
 }

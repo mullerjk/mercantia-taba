@@ -11,9 +11,14 @@
     "dev:magicui": "echo 'MagicUI development: cd magicui/apps/www && npm run dev'",
     "build:app": "cd app && npm run build"
   },
-  "devDependencies": {},
   "engines": {
     "node": ">=18.17.0",
     "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.2"
   }
 }

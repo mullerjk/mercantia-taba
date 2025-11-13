@@ -1,19 +1,56 @@
 /**
- * Drizzle ORM Schema for Knowledge Graph
+ * Drizzle ORM Schema for Knowledge Graph and Authentication
  * Based on Schema.org entities and relations
  */
 
-import { 
-  pgTable, 
-  uuid, 
-  varchar, 
-  jsonb, 
-  timestamp, 
+import {
+  pgTable,
+  uuid,
+  varchar,
+  jsonb,
+  timestamp,
   integer,
   index,
-  text
+  text,
+  boolean
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
+
+// Users table for authentication
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  fullName: varchar('full_name', { length: 255 }),
+  avatarUrl: text('avatar_url'),
+  emailVerified: boolean('email_verified').default(false).notNull(),
+  role: varchar('role', { length: 50 }).default('user').notNull(), // 'user', 'admin', 'moderator'
+
+  // Metadata
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at'),
+  lastLoginAt: timestamp('last_login_at'),
+}, (table) => ({
+  emailIdx: index('idx_users_email').on(table.email),
+  roleIdx: index('idx_users_role').on(table.role),
+}))
+
+// User sessions for JWT tokens
+export const userSessions = pgTable('user_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+
+  // Metadata
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  userAgent: text('user_agent'),
+  ipAddress: varchar('ip_address', { length: 45 }), // IPv6 support
+}, (table) => ({
+  userIdIdx: index('idx_user_sessions_user_id').on(table.userId),
+  tokenIdx: index('idx_user_sessions_token').on(table.token),
+  expiresAtIdx: index('idx_user_sessions_expires_at').on(table.expiresAt),
+}))
 
 // Main entities table (nodes in the graph)
 export const entities = pgTable('entities', {

@@ -1,0 +1,91 @@
+import { NextRequest, NextResponse } from 'next/server'
+import jwt from 'jsonwebtoken'
+import { eq } from 'drizzle-orm'
+import { db } from '@/db'
+import { users, userSessions } from '@/db/schema'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+
+export async function GET(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization')
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authorization token required' },
+        { status: 401 }
+      )
+    }
+
+    const token = authHeader.substring(7) // Remove 'Bearer ' prefix
+
+    // Verify JWT token
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, JWT_SECRET)
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      )
+    }
+
+    // Check if session exists and is not expired
+    const sessionResult = await db
+      .select()
+      .from(userSessions)
+      .where(eq(userSessions.token, token))
+      .limit(1)
+
+    if (sessionResult.length === 0) {
+      return NextResponse.json(
+        { error: 'Session not found' },
+        { status: 401 }
+      )
+    }
+
+    const session = sessionResult[0]
+
+    if (new Date() > session.expiresAt) {
+      // Clean up expired session
+      await db
+        .delete(userSessions)
+        .where(eq(userSessions.id, session.id))
+
+      return NextResponse.json(
+        { error: 'Session expired' },
+        { status: 401 }
+      )
+    }
+
+    // Get user data
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, decoded.userId))
+      .limit(1)
+
+    if (userResult.length === 0) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 401 }
+      )
+    }
+
+    const user = userResult[0]
+    const { passwordHash: _, ...userData } = user
+
+    return NextResponse.json({
+      user: userData,
+      token,
+      message: 'Token is valid'
+    })
+
+  } catch (error) {
+    console.error('Token verification error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
