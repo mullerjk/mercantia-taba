@@ -80,9 +80,9 @@ export default function LoginPage() {
         {/* Login Card */}
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome Back</CardTitle>
+            <CardTitle className="text-2xl">Bem-vindo de Volta</CardTitle>
             <CardDescription>
-              Sign in to your account to continue
+              Entre na sua conta para continuar
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -94,27 +94,27 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">Endereço de e-mail</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder="Digite seu e-mail"
                   required
                   disabled={isSubmitting}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Senha</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder="Digite sua senha"
                     required
                     disabled={isSubmitting}
                   />
@@ -143,10 +143,10 @@ export default function LoginPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing In...
+                    Entrando...
                   </>
                 ) : (
-                  'Sign In'
+                  'Entrar'
                 )}
               </Button>
             </form>
@@ -156,12 +156,12 @@ export default function LoginPage() {
         {/* Sign up link */}
         <div className="text-center">
           <p className="text-sm text-muted-foreground">
-            Don't have an account?{' '}
+            Não tem uma conta?{' '}
             <Link
               href={`/auth/register?redirectTo=${encodeURIComponent(redirectTo)}`}
               className="text-primary hover:underline"
             >
-              Sign up
+              Criar conta
             </Link>
           </p>
         </div>

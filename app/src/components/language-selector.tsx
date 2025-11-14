@@ -1,6 +1,7 @@
 'use client';
 
-import { useTranslation } from '@/contexts/TranslationContext';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Languages } from 'lucide-react';
 
@@ -11,16 +12,23 @@ const languages = [
 ];
 
 export function LanguageSelector() {
-  const { language, setLanguage } = useTranslation();
+  const locale = useLocale();
+  const router = useRouter();
+
+  const handleLanguageChange = (newLocale: string) => {
+    // With localePrefix: 'as-needed', next-intl handles the URL automatically
+    // Force a page reload to change locale
+    window.location.href = `/?locale=${newLocale}`;
+  };
 
   return (
     <div className="flex items-center gap-1">
       {languages.map((lang) => (
         <Button
           key={lang.code}
-          variant={language === lang.code ? "secondary" : "ghost"}
+          variant={locale === lang.code ? "secondary" : "ghost"}
           size="sm"
-          onClick={() => setLanguage(lang.code)}
+          onClick={() => handleLanguageChange(lang.code)}
           className="px-2 py-1 h-8 text-xs"
           title={lang.name}
         >

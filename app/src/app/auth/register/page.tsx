@@ -97,9 +97,9 @@ export default function RegisterPage() {
         {/* Register Card */}
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Create Account</CardTitle>
+            <CardTitle className="text-2xl">Criar Conta</CardTitle>
             <CardDescription>
-              Join Mercantia TABA and start exploring
+              Junte-se à Mercantia e comece a explorar
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -111,39 +111,39 @@ export default function RegisterPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name (Optional)</Label>
+                <Label htmlFor="fullName">Nome Completo (Opcional)</Label>
                 <Input
                   id="fullName"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Enter your full name"
+                  placeholder="Digite seu nome completo"
                   disabled={isSubmitting}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">Endereço de e-mail</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder="Digite seu e-mail"
                   required
                   disabled={isSubmitting}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Senha</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Create a password"
+                    placeholder="Crie uma senha"
                     required
                     disabled={isSubmitting}
                   />
@@ -165,14 +165,14 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm your password"
+                    placeholder="Confirme sua senha"
                     required
                     disabled={isSubmitting}
                   />
@@ -201,10 +201,10 @@ export default function RegisterPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Account...
+                    Criando Conta...
                   </>
                 ) : (
-                  'Sign Up'
+                  'Criar Conta'
                 )}
               </Button>
             </form>
@@ -214,12 +214,12 @@ export default function RegisterPage() {
         {/* Sign in link */}
         <div className="text-center">
           <p className="text-sm text-muted-foreground">
-            Already have an account?{' '}
+            Já tem uma conta?{' '}
             <Link
               href={`/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`}
               className="text-primary hover:underline"
             >
-              Sign in
+              Entrar
             </Link>
           </p>
         </div>

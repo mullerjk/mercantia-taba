@@ -222,6 +222,16 @@ const CheckoutPage = dynamic(() => import('../components/pages/checkout'), {
   ssr: false
 });
 
+const SettingsPage = dynamic(() => import('../components/pages/settings'), {
+  loading: () => <PageLoader />,
+  ssr: false
+});
+
+const SubscriptionPage = dynamic(() => import('../components/pages/subscription'), {
+  loading: () => <PageLoader />,
+  ssr: false
+});
+
 // Enhanced loading component
 function PageLoader() {
   return (
@@ -276,8 +286,24 @@ function PageContent({ currentPage }: { currentPage: string }) {
       return <InventoryPage />;
     case 'finances':
       return <FinancesPage />;
+    case 'business':
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <div className="text-6xl">💼</div>
+            <h2 className="text-2xl font-bold">Negócios</h2>
+            <p className="text-muted-foreground max-w-md">
+              Gerencie seus negócios e oportunidades. Esta funcionalidade estará disponível em breve.
+            </p>
+          </div>
+        </div>
+      );
     case 'checkout':
       return <CheckoutPage />;
+    case 'settings':
+      return <SettingsPage />;
+    case 'subscription':
+      return <SubscriptionPage />;
     default:
       return <DashboardHome />;
   }
@@ -343,6 +369,12 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
     }
   }, [user, loading, currentPage, router]);
 
+  // Update page title dynamically
+  useEffect(() => {
+    const pageTitle = getPageTitle(currentPage);
+    document.title = `${pageTitle} - Mercantia`;
+  }, [currentPage]);
+
   const getPageTitle = (page: string) => {
     const titles = {
       dashboard: 'Dashboard',
@@ -351,7 +383,10 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
       relationships: 'Relacionamentos',
       inventory: 'Inventário',
       finances: 'Finanças',
-      checkout: 'Finalizar Compra'
+      business: 'Negócios',
+      checkout: 'Finalizar Compra',
+      settings: 'Configurações',
+      subscription: 'Plano Corporativo'
     };
     return titles[page as keyof typeof titles] || 'Dashboard';
   };
@@ -364,7 +399,10 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
       relationships: 'Gerencie conexões e rede de contatos',
       inventory: 'Controle de produtos e estoque',
       finances: 'Gestão financeira completa',
-      checkout: 'Finalize suas compras'
+      business: 'Gerencie seus negócios e oportunidades',
+      checkout: 'Finalize suas compras',
+      settings: 'Personalize sua experiência na Mercantia',
+      subscription: 'Potencialize seu negócio com ferramentas de IA avançadas'
     };
     return descriptions[page as keyof typeof descriptions] || 'Visão geral do seu negócio e atividades';
   };
@@ -410,7 +448,9 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
                     <SidebarMenuItem>
                       <button
                         onClick={() => navigateToPage('dashboard')}
-                        className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                        className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                          sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                        } ${
                           currentPage === 'dashboard'
                             ? 'bg-accent text-accent-foreground'
                             : 'hover:bg-accent hover:text-accent-foreground'
@@ -425,7 +465,9 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
                   <SidebarMenuItem>
                     <button
                       onClick={() => navigateToPage('marketplace')}
-                      className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                      className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                        sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                      } ${
                         currentPage === 'marketplace'
                           ? 'bg-accent text-accent-foreground'
                           : 'hover:bg-accent hover:text-accent-foreground'
@@ -435,56 +477,43 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
                       {!sidebarCompact && <span className="font-medium">Marketplace</span>}
                     </button>
                   </SidebarMenuItem>
-
-                  {/* Show other menu items only for authenticated users */}
-                  {user && (
-                    <>
-                      <SidebarMenuItem>
-                        <button
-                          onClick={() => navigateToPage('inventory')}
-                          className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
-                            currentPage === 'inventory'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <Package className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Inventário</span>}
-                        </button>
-                      </SidebarMenuItem>
-
-                      <SidebarMenuItem>
-                        <button
-                          onClick={() => navigateToPage('finances')}
-                          className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
-                            currentPage === 'finances'
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <BarChart3 className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Finanças</span>}
-                        </button>
-                      </SidebarMenuItem>
-                    </>
-                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Business Management - Only for authenticated users */}
+            {/* Account & Business Management - Only for authenticated users */}
             {user && (
               <>
-                {/* Separator */}
-                {!sidebarCompact && <div className="mx-2 my-4 h-px bg-border" />}
+                {/* Separator - Always visible */}
+                <div className="mx-2 my-4 h-px bg-border border-t border-border"></div>
 
                 <SidebarGroup>
                   <SidebarGroupContent>
                     <SidebarMenu>
+                      {/* Minha Conta */}
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('account')}
+                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                          } ${
+                            currentPage === 'account'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <User className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Minha Conta</span>}
+                        </button>
+                      </SidebarMenuItem>
+
+                      {/* Relacionamentos */}
                       <SidebarMenuItem>
                         <button
                           onClick={() => navigateToPage('relationships')}
-                          className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
+                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                          } ${
                             currentPage === 'relationships'
                               ? 'bg-accent text-accent-foreground'
                               : 'hover:bg-accent hover:text-accent-foreground'
@@ -495,31 +524,74 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
                         </button>
                       </SidebarMenuItem>
 
+                      {/* Inventário */}
                       <SidebarMenuItem>
                         <button
-                          onClick={() => navigateToPage('account')}
-                          className={`flex items-center gap-3 px-2.5 py-2 rounded-md transition-colors w-full text-left ${
-                            currentPage === 'account'
+                          onClick={() => navigateToPage('inventory')}
+                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                          } ${
+                            currentPage === 'inventory'
                               ? 'bg-accent text-accent-foreground'
                               : 'hover:bg-accent hover:text-accent-foreground'
                           }`}
                         >
-                          <User className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Minha Conta</span>}
+                          <Package className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Inventário</span>}
+                        </button>
+                      </SidebarMenuItem>
+
+                      {/* Finanças */}
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('finances')}
+                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                          } ${
+                            currentPage === 'finances'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <BarChart3 className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Finanças</span>}
                         </button>
                       </SidebarMenuItem>
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </SidebarGroup>
 
-                {/* Separator */}
-                {!sidebarCompact && <div className="mx-2 my-4 h-px bg-border" />}
+                {/* Separator - Always visible */}
+                <div className="mx-2 my-4 h-px bg-border border-t border-border"></div>
+
+                {/* Negócios */}
+                <SidebarGroup>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <button
+                          onClick={() => navigateToPage('business')}
+                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
+                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
+                          } ${
+                            currentPage === 'business'
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          <Briefcase className="w-5 h-5" />
+                          {!sidebarCompact && <span className="font-medium">Negócios</span>}
+                        </button>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
 
                 {/* Schema Explorer - Hidden when compact */}
                 {!sidebarCompact && (
                   <>
                     {/* Separator */}
-                    <div className="mx-2 my-4 h-px bg-border" />
+                    <div className="mx-2 my-4 h-px bg-border border-t border-border"></div>
 
                     {/* Schema Explorer */}
                     <SidebarGroup>
@@ -585,15 +657,18 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer">
-                        <User className="mr-2 h-4 w-4" />
-                        Perfil
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
+
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => navigateToPage('settings')}
+                      >
                         <Settings className="mr-2 h-4 w-4" />
                         Configurações
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => navigateToPage('subscription')}
+                      >
                         <CreditCard className="mr-2 h-4 w-4" />
                         Assinatura
                       </DropdownMenuItem>
