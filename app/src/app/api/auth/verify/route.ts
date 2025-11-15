@@ -3,26 +3,32 @@ import jwt from 'jsonwebtoken'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { users, userSessions } from '@/db/schema'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+import { config } from '@/lib/config'
+import { getAuthToken } from '@/lib/cookies'
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
+    // Try to get token from cookie first, fallback to Authorization header
+    let token = getAuthToken(request)
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7)
+      }
+    }
+
+    if (!token) {
       return NextResponse.json(
         { error: 'Authorization token required' },
         { status: 401 }
       )
     }
 
-    const token = authHeader.substring(7) // Remove 'Bearer ' prefix
-
     // Verify JWT token
     let decoded: any
     try {
-      decoded = jwt.verify(token, JWT_SECRET)
+      decoded = jwt.verify(token, config.jwtSecret)
     } catch (error) {
       return NextResponse.json(
         { error: 'Invalid or expired token' },

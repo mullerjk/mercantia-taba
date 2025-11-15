@@ -12,14 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AlertCircle, CheckCircle2, Loader2, User, MapPin, Briefcase, Globe, Users, Shield } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
 
 export default function AccountPage() {
   const router = useRouter()
-  const { user: authUser } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [user, setUser] = useState<any>(null)
   const [formData, setFormData] = useState<Partial<PersonSchema>>({
     '@type': 'Person',
     name: '',
@@ -47,34 +46,32 @@ export default function AccountPage() {
 
   async function loadUserProfile() {
     try {
-      const response = await fetch('/api/user/profile', {
+      // Get authenticated user
+      const response = await fetch('/api/auth/verify', {
         credentials: 'include',
       })
 
-      if (response.ok) {
-        const { user, person } = await response.json()
-
-        // Merge user data with person entity data
-        if (person) {
-          setFormData(prev => ({
-            ...prev,
-            ...person,
-          }))
-        } else {
-          // Use basic user data
-          setFormData(prev => ({
-            ...prev,
-            name: user.fullName || '',
-            email: user.email || '',
-            image: user.avatarUrl || '',
-          }))
-        }
+      if (!response.ok) {
+        router.push('/auth/login')
+        return
       }
+
+      const { user } = await response.json()
+      setUser(user)
+
+      // Load person entity if exists
+      // For now, use user data
+      setFormData(prev => ({
+        ...prev,
+        name: user.fullName || '',
+        email: user.email || '',
+        image: user.avatarUrl || '',
+      }))
 
       setLoading(false)
     } catch (error) {
       console.error('Error loading profile:', error)
-      setMessage({ type: 'error', text: 'Erro ao carregar perfil' })
+      setMessage({ type: 'error', text: 'Failed to load profile' })
       setLoading(false)
     }
   }
@@ -93,14 +90,16 @@ export default function AccountPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Falha ao atualizar perfil')
+        throw new Error('Failed to update profile')
       }
 
-      setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' })
+      setMessage({ type: 'success', text: 'Profile updated successfully!' })
+
+      // Reload profile
       await loadUserProfile()
     } catch (error) {
       console.error('Error updating profile:', error)
-      setMessage({ type: 'error', text: 'Erro ao atualizar perfil' })
+      setMessage({ type: 'error', text: 'Failed to update profile' })
     } finally {
       setSaving(false)
     }
@@ -122,15 +121,15 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-8">
-      <div className="flex items-center gap-4">
+    <div className="container mx-auto py-10 max-w-5xl">
+      <div className="flex items-center gap-4 mb-8">
         <Avatar className="w-20 h-20">
           <AvatarImage src={formData.image as string} alt={formData.name} />
           <AvatarFallback>
@@ -138,14 +137,14 @@ export default function AccountPage() {
           </AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="text-3xl font-bold">Minha Conta</h1>
-          <p className="text-muted-foreground">Gerencie seu perfil e preferências</p>
+          <h1 className="text-3xl font-bold">My Account</h1>
+          <p className="text-muted-foreground">Manage your profile and preferences</p>
         </div>
       </div>
 
       {message && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${
-          message.type === 'success' ? 'bg-green-50 dark:bg-green-950 text-green-900 dark:text-green-100' : 'bg-red-50 dark:bg-red-950 text-red-900 dark:text-red-100'
+        <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+          message.type === 'success' ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'
         }`}>
           {message.type === 'success' ? (
             <CheckCircle2 className="w-5 h-5" />
@@ -161,15 +160,15 @@ export default function AccountPage() {
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="basic">
               <User className="w-4 h-4 mr-2" />
-              Básico
+              Basic
             </TabsTrigger>
             <TabsTrigger value="contact">
               <MapPin className="w-4 h-4 mr-2" />
-              Contato
+              Contact
             </TabsTrigger>
             <TabsTrigger value="professional">
               <Briefcase className="w-4 h-4 mr-2" />
-              Profissional
+              Professional
             </TabsTrigger>
             <TabsTrigger value="social">
               <Globe className="w-4 h-4 mr-2" />
@@ -177,11 +176,11 @@ export default function AccountPage() {
             </TabsTrigger>
             <TabsTrigger value="personal">
               <Users className="w-4 h-4 mr-2" />
-              Pessoal
+              Personal
             </TabsTrigger>
             <TabsTrigger value="security">
               <Shield className="w-4 h-4 mr-2" />
-              Segurança
+              Security
             </TabsTrigger>
           </TabsList>
 
@@ -189,95 +188,95 @@ export default function AccountPage() {
           <TabsContent value="basic" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Informações Básicas</CardTitle>
-                <CardDescription>Seus dados pessoais e identidade</CardDescription>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>Your personal details and identity</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="givenName">Nome</Label>
+                    <Label htmlFor="givenName">First Name</Label>
                     <Input
                       id="givenName"
                       value={formData.givenName || ''}
                       onChange={(e) => updateField('givenName', e.target.value)}
-                      placeholder="João"
+                      placeholder="John"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="familyName">Sobrenome</Label>
+                    <Label htmlFor="familyName">Last Name</Label>
                     <Input
                       id="familyName"
                       value={formData.familyName || ''}
                       onChange={(e) => updateField('familyName', e.target.value)}
-                      placeholder="Silva"
+                      placeholder="Doe"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo (Nome de Exibição)</Label>
+                  <Label htmlFor="name">Full Name (Display Name)</Label>
                   <Input
                     id="name"
                     value={formData.name || ''}
                     onChange={(e) => updateField('name', e.target.value)}
-                    placeholder="João Silva"
+                    placeholder="John Doe"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="additionalName">Nome do Meio</Label>
+                    <Label htmlFor="additionalName">Middle Name</Label>
                     <Input
                       id="additionalName"
                       value={formData.additionalName || ''}
                       onChange={(e) => updateField('additionalName', e.target.value)}
-                      placeholder="Miguel"
+                      placeholder="Michael"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="alternateName">Apelido</Label>
+                    <Label htmlFor="alternateName">Nickname</Label>
                     <Input
                       id="alternateName"
                       value={formData.alternateName || ''}
                       onChange={(e) => updateField('alternateName', e.target.value)}
-                      placeholder="Jão"
+                      placeholder="Johnny"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="honorificPrefix">Título/Prefixo</Label>
+                    <Label htmlFor="honorificPrefix">Title/Prefix</Label>
                     <Input
                       id="honorificPrefix"
                       value={formData.honorificPrefix || ''}
                       onChange={(e) => updateField('honorificPrefix', e.target.value)}
-                      placeholder="Dr., Sr., Sra."
+                      placeholder="Dr., Mr., Mrs."
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="honorificSuffix">Sufixo</Label>
+                    <Label htmlFor="honorificSuffix">Suffix</Label>
                     <Input
                       id="honorificSuffix"
                       value={formData.honorificSuffix || ''}
                       onChange={(e) => updateField('honorificSuffix', e.target.value)}
-                      placeholder="Jr., PhD"
+                      placeholder="Jr., Sr., PhD"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="gender">Gênero</Label>
+                    <Label htmlFor="gender">Gender</Label>
                     <Input
                       id="gender"
                       value={formData.gender || ''}
                       onChange={(e) => updateField('gender', e.target.value)}
-                      placeholder="Masculino, Feminino, Outro"
+                      placeholder="Male, Female, Other"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="birthDate">Data de Nascimento</Label>
+                    <Label htmlFor="birthDate">Birth Date</Label>
                     <Input
                       id="birthDate"
                       type="date"
@@ -288,18 +287,18 @@ export default function AccountPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Bio / Descrição</Label>
+                  <Label htmlFor="description">Bio / Description</Label>
                   <Textarea
                     id="description"
                     value={formData.description || ''}
                     onChange={(e) => updateField('description', e.target.value)}
-                    placeholder="Conte sobre você..."
+                    placeholder="Tell us about yourself..."
                     rows={4}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="image">URL da Foto de Perfil</Label>
+                  <Label htmlFor="image">Profile Image URL</Label>
                   <Input
                     id="image"
                     type="url"
@@ -316,8 +315,8 @@ export default function AccountPage() {
           <TabsContent value="contact" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Informações de Contato</CardTitle>
-                <CardDescription>Como as pessoas podem entrar em contato</CardDescription>
+                <CardTitle>Contact Information</CardTitle>
+                <CardDescription>How people can reach you</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -328,84 +327,84 @@ export default function AccountPage() {
                       type="email"
                       value={formData.email || ''}
                       onChange={(e) => updateField('email', e.target.value)}
-                      placeholder="joao@example.com"
+                      placeholder="john@example.com"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="telephone">Telefone</Label>
+                    <Label htmlFor="telephone">Phone</Label>
                     <Input
                       id="telephone"
                       type="tel"
                       value={formData.telephone || ''}
                       onChange={(e) => updateField('telephone', e.target.value)}
-                      placeholder="+55 (11) 98765-4321"
+                      placeholder="+1 (555) 123-4567"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="faxNumber">Fax (Opcional)</Label>
+                  <Label htmlFor="faxNumber">Fax Number (Optional)</Label>
                   <Input
                     id="faxNumber"
                     type="tel"
                     value={formData.faxNumber || ''}
                     onChange={(e) => updateField('faxNumber', e.target.value)}
-                    placeholder="+55 (11) 3456-7890"
+                    placeholder="+1 (555) 123-4568"
                   />
                 </div>
 
                 <Separator className="my-6" />
 
-                <h3 className="text-lg font-semibold">Endereço</h3>
+                <h3 className="text-lg font-semibold">Address</h3>
 
                 <div className="space-y-2">
-                  <Label htmlFor="streetAddress">Endereço</Label>
+                  <Label htmlFor="streetAddress">Street Address</Label>
                   <Input
                     id="streetAddress"
                     value={(formData.address as PostalAddress)?.streetAddress || ''}
                     onChange={(e) => updateNestedField('address', 'streetAddress', e.target.value)}
-                    placeholder="Rua Exemplo, 123, Apto 4B"
+                    placeholder="123 Main St, Apt 4B"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="addressLocality">Cidade</Label>
+                    <Label htmlFor="addressLocality">City</Label>
                     <Input
                       id="addressLocality"
                       value={(formData.address as PostalAddress)?.addressLocality || ''}
                       onChange={(e) => updateNestedField('address', 'addressLocality', e.target.value)}
-                      placeholder="São Paulo"
+                      placeholder="New York"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="addressRegion">Estado</Label>
+                    <Label htmlFor="addressRegion">State/Province</Label>
                     <Input
                       id="addressRegion"
                       value={(formData.address as PostalAddress)?.addressRegion || ''}
                       onChange={(e) => updateNestedField('address', 'addressRegion', e.target.value)}
-                      placeholder="SP"
+                      placeholder="NY"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="postalCode">CEP</Label>
+                    <Label htmlFor="postalCode">Postal Code</Label>
                     <Input
                       id="postalCode"
                       value={(formData.address as PostalAddress)?.postalCode || ''}
                       onChange={(e) => updateNestedField('address', 'postalCode', e.target.value)}
-                      placeholder="01310-100"
+                      placeholder="10001"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="addressCountry">País</Label>
+                    <Label htmlFor="addressCountry">Country</Label>
                     <Input
                       id="addressCountry"
                       value={(formData.address as PostalAddress)?.addressCountry || ''}
                       onChange={(e) => updateNestedField('address', 'addressCountry', e.target.value)}
-                      placeholder="Brasil"
+                      placeholder="United States"
                     />
                   </div>
                 </div>
@@ -417,22 +416,22 @@ export default function AccountPage() {
           <TabsContent value="professional" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Informações Profissionais</CardTitle>
-                <CardDescription>Sua carreira e detalhes do trabalho</CardDescription>
+                <CardTitle>Professional Information</CardTitle>
+                <CardDescription>Your career and work details</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="jobTitle">Cargo</Label>
+                  <Label htmlFor="jobTitle">Job Title</Label>
                   <Input
                     id="jobTitle"
                     value={formData.jobTitle || ''}
                     onChange={(e) => updateField('jobTitle', e.target.value)}
-                    placeholder="Engenheiro de Software"
+                    placeholder="Software Engineer"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="worksFor">Empresa/Organização</Label>
+                  <Label htmlFor="worksFor">Company/Organization</Label>
                   <Input
                     id="worksFor"
                     value={typeof formData.worksFor === 'object' ? (formData.worksFor as any)?.name : ''}
@@ -442,12 +441,12 @@ export default function AccountPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="award">Prêmios e Conquistas (separados por vírgula)</Label>
+                  <Label htmlFor="award">Awards & Achievements (comma-separated)</Label>
                   <Textarea
                     id="award"
                     value={formData.award?.join(', ') || ''}
                     onChange={(e) => updateField('award', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                    placeholder="Funcionário do Ano 2023, Prêmio de Inovação 2022"
+                    placeholder="Employee of the Year 2023, Innovation Award 2022"
                     rows={3}
                   />
                 </div>
@@ -459,32 +458,32 @@ export default function AccountPage() {
           <TabsContent value="social" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Presença Social e Web</CardTitle>
-                <CardDescription>Seus perfis online e conexões</CardDescription>
+                <CardTitle>Social & Web Presence</CardTitle>
+                <CardDescription>Your online profiles and connections</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="url">Site Pessoal</Label>
+                  <Label htmlFor="url">Personal Website</Label>
                   <Input
                     id="url"
                     type="url"
                     value={formData.url || ''}
                     onChange={(e) => updateField('url', e.target.value)}
-                    placeholder="https://joaosilva.com"
+                    placeholder="https://johndoe.com"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sameAs">Links de Redes Sociais (um por linha)</Label>
+                  <Label htmlFor="sameAs">Social Media Links (one per line)</Label>
                   <Textarea
                     id="sameAs"
                     value={formData.sameAs?.join('\n') || ''}
                     onChange={(e) => updateField('sameAs', e.target.value.split('\n').filter(Boolean))}
-                    placeholder="https://twitter.com/joaosilva&#10;https://linkedin.com/in/joaosilva&#10;https://github.com/joaosilva"
+                    placeholder="https://twitter.com/johndoe&#10;https://linkedin.com/in/johndoe&#10;https://github.com/johndoe"
                     rows={5}
                   />
                   <p className="text-sm text-muted-foreground">
-                    Adicione links para Twitter, LinkedIn, GitHub, etc.
+                    Add links to your Twitter, LinkedIn, GitHub, etc.
                   </p>
                 </div>
               </CardContent>
@@ -495,23 +494,23 @@ export default function AccountPage() {
           <TabsContent value="personal" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Detalhes Pessoais</CardTitle>
-                <CardDescription>Informações pessoais adicionais</CardDescription>
+                <CardTitle>Personal Details</CardTitle>
+                <CardDescription>Additional personal information</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="nationality">Nacionalidade</Label>
+                  <Label htmlFor="nationality">Nationality</Label>
                   <Input
                     id="nationality"
                     value={typeof formData.nationality === 'object' ? (formData.nationality as any)?.name : ''}
                     onChange={(e) => updateField('nationality', { '@type': 'Country', name: e.target.value })}
-                    placeholder="Brasileiro"
+                    placeholder="United States"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="height">Altura</Label>
+                    <Label htmlFor="height">Height</Label>
                     <Input
                       id="height"
                       value={typeof formData.height === 'string' ? formData.height : ''}
@@ -520,7 +519,7 @@ export default function AccountPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="weight">Peso</Label>
+                    <Label htmlFor="weight">Weight</Label>
                     <Input
                       id="weight"
                       value={typeof formData.weight === 'string' ? formData.weight : ''}
@@ -531,12 +530,12 @@ export default function AccountPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="taxID">CPF/ID Fiscal (Opcional)</Label>
+                  <Label htmlFor="taxID">Tax ID (Optional)</Label>
                   <Input
                     id="taxID"
                     value={formData.taxID || ''}
                     onChange={(e) => updateField('taxID', e.target.value)}
-                    placeholder="XXX.XXX.XXX-XX"
+                    placeholder="XXX-XX-XXXX"
                   />
                 </div>
               </CardContent>
@@ -547,25 +546,25 @@ export default function AccountPage() {
           <TabsContent value="security" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Segurança e Privacidade</CardTitle>
-                <CardDescription>Gerencie a segurança da sua conta</CardDescription>
+                <CardTitle>Security & Privacy</CardTitle>
+                <CardDescription>Manage your account security</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium mb-2">Status da Conta</h4>
+                  <h4 className="font-medium mb-2">Account Status</h4>
                   <div className="space-y-1 text-sm">
-                    <p>Email: <span className="font-mono">{authUser?.email}</span></p>
-                    <p>Função: <span className="capitalize">{authUser?.role}</span></p>
-                    <p>Verificado: {authUser?.emailVerified ? '✓ Sim' : '✗ Não'}</p>
+                    <p>Email: <span className="font-mono">{user?.email}</span></p>
+                    <p>Role: <span className="capitalize">{user?.role}</span></p>
+                    <p>Verified: {user?.emailVerified ? '✓ Yes' : '✗ No'}</p>
                   </div>
                 </div>
 
                 <Button type="button" variant="outline" className="w-full">
-                  Alterar Senha
+                  Change Password
                 </Button>
 
                 <Button type="button" variant="outline" className="w-full">
-                  Habilitar Autenticação em Duas Etapas
+                  Enable Two-Factor Authentication
                 </Button>
               </CardContent>
             </Card>
@@ -573,9 +572,12 @@ export default function AccountPage() {
         </Tabs>
 
         <div className="flex justify-end gap-4 mt-8">
+          <Button type="button" variant="outline" onClick={() => router.push('/')}>
+            Cancel
+          </Button>
           <Button type="submit" disabled={saving}>
             {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Salvar Alterações
+            Save Changes
           </Button>
         </div>
       </form>

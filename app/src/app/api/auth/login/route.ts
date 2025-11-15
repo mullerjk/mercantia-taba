@@ -4,20 +4,33 @@ import jwt from 'jsonwebtoken'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { users, userSessions } from '@/db/schema'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+import { config } from '@/lib/config'
+import { validateData, loginSchema } from '@/lib/validations'
+import { applyRateLimit, addRateLimitHeaders } from '@/lib/middleware/rate-limit-middleware'
+import { RateLimitPresets } from '@/lib/rate-limit'
+import { setAuthCookie } from '@/lib/cookies'
+import { initializeCsrfProtection } from '@/lib/csrf'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
-
-    // Validate input
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      )
+    // Apply rate limiting (5 requests per minute for auth)
+    const { response: rateLimitResponse, result: rateLimitResult } = applyRateLimit(
+      request,
+      RateLimitPresets.AUTH
+    )
+    if (rateLimitResponse) {
+      return rateLimitResponse
     }
+
+    const body = await request.json()
+
+    // Validate input with Zod
+    const validation = validateData(loginSchema, body)
+    if (!validation.success) {
+      return validation.error
+    }
+
+    const { email, password } = validation.data
 
     // Find user by email
     const userResult = await db
@@ -51,8 +64,8 @@ export async function POST(request: NextRequest) {
         email: user.email,
         role: user.role
       },
-      JWT_SECRET,
-      { expiresIn: '7d' }
+      config.jwtSecret,
+      { expiresIn: config.jwtExpiresIn }
     )
 
     // Create session
@@ -77,11 +90,32 @@ export async function POST(request: NextRequest) {
     // Return user data (without password hash)
     const { passwordHash: _, ...userData } = user
 
-    return NextResponse.json({
+    let response = NextResponse.json({
       user: userData,
-      token,
+      token, // Still return token for backward compatibility (can be removed later)
       message: 'Login successful'
     })
+
+    // Set auth token as httpOnly cookie
+    response = setAuthCookie(response, token)
+
+    // Initialize CSRF protection
+    const { response: csrfResponse, token: csrfToken } = initializeCsrfProtection(response)
+    response = csrfResponse
+
+    // Add CSRF token to response body for client-side storage
+    const responseBody = await response.json()
+    response = NextResponse.json({
+      ...responseBody,
+      csrfToken,
+    })
+
+    // Re-apply cookies after modifying response
+    response = setAuthCookie(response, token)
+    const { response: finalResponse } = initializeCsrfProtection(response)
+
+    // Add rate limit headers to response
+    return addRateLimitHeaders(finalResponse, rateLimitResult)
 
   } catch (error) {
     console.error('Login error:', error)

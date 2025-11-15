@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { DashboardClient } from "./dashboard-client";
+import DashboardHome from "../dashboard-home";
 
 export const metadata: Metadata = {
   title: 'Dashboard - Mercantia',
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardPage() {
-  return <DashboardClient />;
+  return <DashboardHome />;
 }
