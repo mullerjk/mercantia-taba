@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { CartSummary } from '@/components/pages/checkout/CartSummary'
 import { useAuth } from '@/contexts/AuthContext'
+import { useCart } from '@/contexts/CartContext'
 import { ArrowLeft, ShoppingCart, Loader2 } from 'lucide-react'
 
 interface CartItem {
@@ -13,6 +14,10 @@ interface CartItem {
   productId: string
   quantity: number
   pricePerUnit: number
+  price?: number
+  name?: string
+  description?: string
+  image?: string
   product?: {
     id: string
     name: string
@@ -31,11 +36,12 @@ interface CartData {
 export default function CartPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const { state: cartContextState, removeItem, updateQuantity } = useCart()
   const [cart, setCart] = useState<CartData | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
 
-  // Load cart
+  // Load cart from context first, then sync with API
   useEffect(() => {
     if (!user) {
       router.push('/auth/login')
@@ -44,6 +50,31 @@ export default function CartPage() {
 
     const loadCart = async () => {
       try {
+        // First, try to use items from cart context
+        if (cartContextState.items.length > 0) {
+          const contextItems: CartItem[] = cartContextState.items.map(item => ({
+            id: item.id,
+            productId: item.id,
+            quantity: item.quantity,
+            pricePerUnit: item.price,
+            price: item.price,
+            name: item.name,
+            description: item.description,
+            image: item.image,
+          }))
+
+          const subtotal = contextItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0)
+
+          setCart({
+            cart: { id: '', userId: user.id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+            items: contextItems,
+            totals: { subtotal, itemCount: contextItems.length },
+          })
+          setLoading(false)
+          return
+        }
+
+        // Otherwise, fetch from API
         const response = await fetch('/api/cart', {
           headers: { 'x-user-id': user.id },
         })
@@ -60,7 +91,7 @@ export default function CartPage() {
     }
 
     loadCart()
-  }, [user, router])
+  }, [user, router, cartContextState.items])
 
   const handleRemoveItem = async (itemId: string) => {
     if (!user || !cart) return
@@ -73,6 +104,8 @@ export default function CartPage() {
       })
 
       if (response.ok) {
+        // Update context and local state
+        removeItem(itemId)
         setCart((prev) => {
           if (!prev) return null
           const updatedItems = prev.items.filter((item) => item.id !== itemId)
@@ -80,7 +113,7 @@ export default function CartPage() {
             ...prev,
             items: updatedItems,
             totals: {
-              subtotal: updatedItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0),
+              subtotal: updatedItems.reduce((sum, item) => sum + ((item.pricePerUnit || item.price) * item.quantity), 0),
               itemCount: updatedItems.length,
             },
           }
@@ -108,6 +141,8 @@ export default function CartPage() {
       })
 
       if (response.ok) {
+        // Update context and local state
+        updateQuantity(itemId, quantity)
         setCart((prev) => {
           if (!prev) return null
           const updatedItems = prev.items.map((item) =>
@@ -117,7 +152,7 @@ export default function CartPage() {
             ...prev,
             items: updatedItems,
             totals: {
-              subtotal: updatedItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0),
+              subtotal: updatedItems.reduce((sum, item) => sum + ((item.pricePerUnit || item.price) * item.quantity), 0),
               itemCount: updatedItems.length,
             },
           }
