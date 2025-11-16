@@ -70,7 +70,7 @@ export default function ProductPage() {
         id: product.id,
         name: product.name,
         description: product.description,
-        price: product.price / 100, // Convert cents to dollars
+        price: product.price * 100, // Product.price is in dollars, convert to cents
         image: product.image,
         schema_type: product.schema_type,
         category: product.category

@@ -9,7 +9,9 @@ import { CartSummary } from './CartSummary'
 import { ShippingForm } from './ShippingForm'
 import { PaymentMethodSelector } from './PaymentMethodSelector'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, Loader2, AlertCircle, Check, MapPin, CreditCard } from 'lucide-react'
+import { useCart } from '@/contexts/CartContext'
+import { ArrowLeft, Loader2, AlertCircle, Check, MapPin, CreditCard, ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react'
+import Image from 'next/image'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface CartItem {
@@ -32,29 +34,63 @@ interface CartData {
   totals: { subtotal: number; itemCount: number }
 }
 
-type CheckoutStep = 'shipping' | 'payment'
+type CheckoutStep = 'cart' | 'shipping' | 'payment'
 
 export default function CheckoutPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const { state: cartContextState } = useCart()
   const [cart, setCart] = useState<CartData | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [tax, setTax] = useState(0)
   const [shipping, setShipping] = useState(0)
   const [shippingAddressId, setShippingAddressId] = useState<string | null>(null)
-  const [currentStep, setCurrentStep] = useState<CheckoutStep>('shipping')
+  const [currentStep, setCurrentStep] = useState<CheckoutStep>('cart')
   const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [updating, setUpdating] = useState(false)
 
-  // Load cart
+  // Load cart - redirect to login if not authenticated
   useEffect(() => {
     if (!user) {
-      router.push('/auth/login')
+      router.push('/auth/login?redirect=/checkout')
       return
     }
 
     const loadCart = async () => {
       try {
+        // First, try to use items from cart context (localStorage)
+        if (cartContextState.items.length > 0) {
+          const contextItems: CartItem[] = cartContextState.items.map(item => ({
+            id: item.id,
+            productId: item.id,
+            quantity: item.quantity,
+            pricePerUnit: item.price,
+            product: {
+              id: item.id,
+              name: item.name,
+              slug: item.id,
+              images: item.image ? [{ url: item.image }] : undefined,
+              currentPrice: item.price,
+            },
+          }))
+
+          const subtotal = contextItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0)
+
+          setCart({
+            cart: { id: '', userId: user.id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+            items: contextItems,
+            totals: { subtotal, itemCount: contextItems.length },
+          })
+
+          // Calculate tax and shipping
+          setTax(Math.round(subtotal * 0.1)) // 10% tax
+          setShipping(1000) // $10 shipping (in cents)
+          setLoading(false)
+          return
+        }
+
+        // Otherwise, fetch from API
         const response = await fetch('/api/cart', {
           headers: { 'x-user-id': user.id },
         })
@@ -76,7 +112,75 @@ export default function CheckoutPage() {
     }
 
     loadCart()
-  }, [user, router])
+  }, [user, router, cartContextState.items])
+
+  const handleUpdateQuantity = async (itemId: string, quantity: number) => {
+    if (!user || !cart || quantity < 1) return
+
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/cart/items?itemId=${itemId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+        },
+        body: JSON.stringify({ quantity }),
+      })
+
+      if (response.ok) {
+        setCart((prev) => {
+          if (!prev) return null
+          const updatedItems = prev.items.map((item) =>
+            item.id === itemId ? { ...item, quantity } : item
+          )
+          return {
+            ...prev,
+            items: updatedItems,
+            totals: {
+              subtotal: updatedItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0),
+              itemCount: updatedItems.length,
+            },
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleRemoveItem = async (itemId: string) => {
+    if (!user || !cart) return
+
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/cart/items?itemId=${itemId}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': user.id },
+      })
+
+      if (response.ok) {
+        setCart((prev) => {
+          if (!prev) return null
+          const updatedItems = prev.items.filter((item) => item.id !== itemId)
+          return {
+            ...prev,
+            items: updatedItems,
+            totals: {
+              subtotal: updatedItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0),
+              itemCount: updatedItems.length,
+            },
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error removing item:', error)
+    } finally {
+      setUpdating(false)
+    }
+  }
 
   const handleCheckout = async (addressId: string) => {
     if (!user || !cart || cart.items.length === 0) return
@@ -129,7 +233,7 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen p-6">
         <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     )
@@ -137,14 +241,16 @@ export default function CheckoutPage() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Checkout</h1>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold">Checkout</h1>
 
-        <div className="text-center py-12">
-          <p className="text-gray-600 mb-4">Seu carrinho está vazio</p>
-          <Link href="/cart">
-            <Button>Voltar ao Carrinho</Button>
-          </Link>
+          <div className="text-center py-12">
+            <p className="text-gray-600 mb-4">Seu carrinho está vazio</p>
+            <Link href="/marketplace">
+              <Button>Ir para Marketplace</Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -153,7 +259,8 @@ export default function CheckoutPage() {
   const total = cart.totals.subtotal + tax + shipping
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button
@@ -162,8 +269,10 @@ export default function CheckoutPage() {
           onClick={() => {
             if (currentStep === 'payment') {
               setCurrentStep('shipping')
+            } else if (currentStep === 'shipping') {
+              setCurrentStep('cart')
             } else {
-              router.push('/cart')
+              router.push('/marketplace')
             }
           }}
         >
@@ -172,14 +281,31 @@ export default function CheckoutPage() {
         <div>
           <h1 className="text-3xl font-bold">Finalizar Compra</h1>
           <p className="text-gray-600 text-sm mt-1">
-            {currentStep === 'shipping' ? 'Passo 1: Selecione seu endereço de entrega' : 'Passo 2: Escolha o método de pagamento'}
+            {currentStep === 'cart' ? 'Passo 1: Revise seu carrinho' : currentStep === 'shipping' ? 'Passo 2: Selecione seu endereço de entrega' : 'Passo 3: Escolha o método de pagamento'}
           </p>
         </div>
       </div>
 
       {/* Step Indicator */}
-      <div className="flex items-center justify-between gap-4 max-w-2xl">
-        {/* Step 1: Shipping */}
+      <div className="flex items-center justify-between gap-2 max-w-full">
+        {/* Step 1: Cart */}
+        <div className="flex items-center gap-3 flex-1">
+          <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+            currentStep === 'cart' || currentStep === 'shipping' || currentStep === 'payment'
+              ? 'bg-primary border-primary text-white'
+              : 'border-gray-300'
+          }`}>
+            {currentStep !== 'cart' ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+          </div>
+          <div className="hidden sm:block flex-1">
+            <p className="font-semibold text-sm">Carrinho</p>
+          </div>
+        </div>
+
+        {/* Divider 1 */}
+        <div className={`h-1 flex-1 rounded ${currentStep === 'shipping' || currentStep === 'payment' ? 'bg-primary' : 'bg-gray-300'}`} />
+
+        {/* Step 2: Shipping */}
         <div className="flex items-center gap-3 flex-1">
           <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
             currentStep === 'shipping' || currentStep === 'payment'
@@ -188,16 +314,15 @@ export default function CheckoutPage() {
           }`}>
             {currentStep === 'payment' ? <Check className="w-5 h-5" /> : <MapPin className="w-5 h-5" />}
           </div>
-          <div className="flex-1">
+          <div className="hidden sm:block flex-1">
             <p className="font-semibold text-sm">Endereço</p>
-            <p className="text-xs text-gray-600">Selecione seu endereço</p>
           </div>
         </div>
 
-        {/* Divider */}
+        {/* Divider 2 */}
         <div className={`h-1 flex-1 rounded ${currentStep === 'payment' ? 'bg-primary' : 'bg-gray-300'}`} />
 
-        {/* Step 2: Payment */}
+        {/* Step 3: Payment */}
         <div className="flex items-center gap-3 flex-1">
           <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
             currentStep === 'payment'
@@ -206,9 +331,8 @@ export default function CheckoutPage() {
           }`}>
             <CreditCard className="w-5 h-5" />
           </div>
-          <div className="flex-1">
+          <div className="hidden sm:block flex-1">
             <p className="font-semibold text-sm">Pagamento</p>
-            <p className="text-xs text-gray-600">Escolha o método</p>
           </div>
         </div>
       </div>
@@ -225,15 +349,88 @@ export default function CheckoutPage() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>{currentStep === 'shipping' ? 'Endereço de Entrega' : 'Método de Pagamento'}</CardTitle>
+              <CardTitle>{currentStep === 'cart' ? 'Revise seu Carrinho' : currentStep === 'shipping' ? 'Endereço de Entrega' : 'Método de Pagamento'}</CardTitle>
               <CardDescription>
-                {currentStep === 'shipping'
+                {currentStep === 'cart'
+                  ? 'Ajuste as quantidades ou remova itens'
+                  : currentStep === 'shipping'
                   ? 'Selecione ou adicione um endereço de entrega'
                   : 'Escolha como deseja pagar sua compra'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {currentStep === 'shipping' ? (
+              {currentStep === 'cart' ? (
+                <div className="space-y-4">
+                  {cart.items.map((item) => {
+                    const productName = item.product?.name || item.name || 'Product'
+                    const productImage = item.product?.images?.[0]?.url || item.image
+
+                    return (
+                      <div key={item.id} className="flex gap-4 pb-4 border-b last:border-b-0">
+                        {productImage && (
+                          <div className="relative w-20 h-20 flex-shrink-0">
+                            <Image
+                              src={productImage}
+                              alt={productName}
+                              fill
+                              className="object-cover rounded"
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex-1">
+                          <h3 className="font-semibold mb-2">{productName}</h3>
+                          <p className="text-sm text-gray-600 mb-3">R$ {(item.pricePerUnit / 100).toFixed(2)}</p>
+
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 border rounded">
+                              <button
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                disabled={updating || item.quantity <= 1}
+                                className="p-1 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <span className="font-semibold min-w-[2rem] text-center">{item.quantity}</span>
+                              <button
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                disabled={updating}
+                                className="p-1 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <button
+                              onClick={() => handleRemoveItem(item.id)}
+                              disabled={updating}
+                              className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm disabled:opacity-50 transition-colors ml-auto"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="text-right font-semibold">
+                          R$ {((item.pricePerUnit * item.quantity) / 100).toFixed(2)}
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={() => setCurrentStep('shipping')}
+                      disabled={cart.items.length === 0 || updating}
+                    >
+                      Continuar para Endereço
+                    </Button>
+                  </div>
+                </div>
+              ) : currentStep === 'shipping' ? (
                 <ShippingForm
                   onSubmit={handleCheckout}
                   loading={submitting}
@@ -265,12 +462,22 @@ export default function CheckoutPage() {
                   <div key={item.id} className="flex justify-between items-start gap-3 text-sm">
                     <div className="flex-1">
                       <p className="font-medium">{item.product?.name || 'Product'}</p>
-                      <p className="text-gray-600">Qty: {item.quantity}</p>
+                      <p className="text-gray-600">{item.quantity} × R$ {(item.pricePerUnit / 100).toFixed(2)}</p>
                     </div>
                     <p className="font-semibold">R$ {((item.pricePerUnit * item.quantity) / 100).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setCurrentStep('cart')}
+                disabled={currentStep === 'cart'}
+              >
+                Editar Carrinho
+              </Button>
 
               {/* Pricing Details */}
               <div className="space-y-2 text-sm">
@@ -329,6 +536,7 @@ export default function CheckoutPage() {
             </Card>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

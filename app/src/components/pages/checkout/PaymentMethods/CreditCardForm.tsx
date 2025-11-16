@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface CreditCardFormProps {
   total: number
@@ -35,14 +36,23 @@ export function CreditCardForm({
   onError,
   loading = false,
 }: CreditCardFormProps) {
+  const { user } = useAuth()
   const { register, handleSubmit, setValue, formState: { errors }, watch } = useForm<CardFormData>({
     defaultValues: {
       installments: '1',
+      cardholderName: user?.fullName || '',
     },
   })
   const [processing, setProcessing] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const installments = watch('installments')
+
+  // Pre-fill cardholder name with user's full name
+  useEffect(() => {
+    if (user?.fullName) {
+      setValue('cardholderName', user.fullName)
+    }
+  }, [user, setValue])
 
   const onSubmit = async (data: CardFormData) => {
     setProcessing(true)

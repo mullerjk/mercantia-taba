@@ -74,6 +74,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { DockNavigation } from "@/components/dock-navigation";
 import { BusinessDropdown } from "@/components/business-dropdown";
+import { CartSyncManager } from "@/components/CartSyncManager";
 
 export default function DashboardLayout({
   children,
@@ -85,6 +86,7 @@ export default function DashboardLayout({
   const { signOut, user, loading } = useAuth();
   const { state: cartState } = useCart();
   const [notifications] = useState(3);
+  const [apiCartCount, setApiCartCount] = useState(0);
 
   // Sidebar compact mode with persistence
   const [sidebarCompact, setSidebarCompact] = useState(() => {
@@ -223,6 +225,39 @@ export default function DashboardLayout({
     }
   };
 
+  // Fetch cart count from API for logged users
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      if (user) {
+        try {
+          const response = await fetch('/api/cart', {
+            headers: { 'x-user-id': user.id },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            // Calculate total quantity (sum of all item quantities)
+            const totalQuantity = data.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
+            setApiCartCount(totalQuantity);
+          }
+        } catch (error) {
+          console.error('Error fetching cart count:', error);
+        }
+      } else {
+        setApiCartCount(0);
+      }
+    };
+
+    fetchCartCount();
+
+    // Listen for cart updates
+    const handleCartSynced = () => {
+      fetchCartCount();
+    };
+
+    window.addEventListener('cartSynced', handleCartSynced);
+    return () => window.removeEventListener('cartSynced', handleCartSynced);
+  }, [user]);
+
   // Redirect to marketplace if user is not logged in, except for public marketplace pages
   useEffect(() => {
     if (!loading && !user && pathname !== '/marketplace' && !pathname.startsWith('/product/') && !pathname.startsWith('/department/') && !pathname.startsWith('/organization/')) {
@@ -309,7 +344,7 @@ export default function DashboardLayout({
       '/health/procedures': 'Registro de procedimentos médicos realizados',
       '/health/exams': 'Histórico e resultados de exames médicos',
       '/business': 'Gerencie seus negócios e oportunidades',
-      '/checkout': 'Finalize suas compras',
+      '/checkout': 'Revise seu carrinho e finalize sua compra com segurança',
       '/settings': 'Personalize sua experiência na Mercantia',
       '/subscription': 'Potencialize seu negócio com ferramentas de IA avançadas'
     };
@@ -360,6 +395,7 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
+      <CartSyncManager />
       <div className="min-h-screen flex w-full bg-background">
         {/* Enhanced Sidebar - Fixed position */}
         <Sidebar className={`hidden md:flex border-r bg-card transition-all duration-300 flex-col fixed left-0 top-0 h-screen z-10 ${
@@ -480,11 +516,11 @@ export default function DashboardLayout({
                           </Link>
 
                           {/* Carrinho - Only show if there are items */}
-                          {cartState.itemCount > 0 && (
+                          {((user && apiCartCount > 0) || (!user && cartState.itemCount > 0)) && (
                             <Link
-                              href="/cart"
+                              href="/checkout"
                               className={`flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors relative ${
-                                pathname === '/cart'
+                                pathname === '/checkout'
                                   ? 'bg-primary text-primary-foreground'
                                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                               }`}
@@ -492,7 +528,7 @@ export default function DashboardLayout({
                               <ShoppingCart className="w-4 h-4 flex-shrink-0" />
                               <span className="truncate">Carrinho</span>
                               <Badge variant="destructive" className="ml-auto h-5 w-5 flex items-center justify-center p-0 text-xs">
-                                {cartState.itemCount}
+                                {user ? apiCartCount : cartState.itemCount}
                               </Badge>
                             </Link>
                           )}

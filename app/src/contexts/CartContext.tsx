@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useRef } from 'react';
 
 export interface CartItem {
   id: string;
@@ -110,12 +110,14 @@ interface CartContextType {
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  syncWithAPI: (userId: string) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const hasSyncedRef = useRef(false);
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -123,7 +125,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (savedCart) {
       try {
         const cartItems = JSON.parse(savedCart);
-        dispatch({ type: 'LOAD_CART', payload: cartItems });
+
+        // Migrate old items with incorrect prices (prices less than 100 cents / $1)
+        // Most products should be at least $1, so anything under that is likely incorrect
+        const migratedItems = cartItems.map((item: CartItem) => {
+          if (item.price < 100) {
+            console.warn(`Migrating item ${item.name} with price ${item.price} cents`);
+            // Don't auto-fix - just clear cart to avoid pricing errors
+            return null;
+          }
+          return item;
+        }).filter(Boolean);
+
+        if (migratedItems.length !== cartItems.length) {
+          console.log('Cart cleared due to pricing migration');
+          localStorage.setItem('mercantiacart', JSON.stringify([]));
+          dispatch({ type: 'CLEAR_CART' });
+        } else {
+          dispatch({ type: 'LOAD_CART', payload: cartItems });
+        }
       } catch (error) {
         console.error('Error loading cart from localStorage:', error);
       }
@@ -151,6 +171,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'CLEAR_CART' });
   };
 
+  const syncWithAPI = async (userId: string) => {
+    // Sync localStorage cart with API when user logs in
+    if (state.items.length === 0 || hasSyncedRef.current) return;
+
+    try {
+      console.log('Syncing cart with API...', state.items);
+      hasSyncedRef.current = true;
+
+      // Add each item from localStorage to the API cart
+      for (const item of state.items) {
+        await fetch('/api/cart/items', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userId,
+          },
+          body: JSON.stringify({
+            productId: item.id,
+            quantity: item.quantity,
+          }),
+        });
+      }
+
+      console.log('Cart synced successfully');
+      // Clear localStorage cart after syncing
+      dispatch({ type: 'CLEAR_CART' });
+    } catch (error) {
+      console.error('Error syncing cart with API:', error);
+      hasSyncedRef.current = false; // Allow retry on error
+    }
+  };
+
   return (
     <CartContext.Provider value={{
       state,
@@ -158,6 +210,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem,
       updateQuantity,
       clearCart,
+      syncWithAPI,
     }}>
       {children}
     </CartContext.Provider>

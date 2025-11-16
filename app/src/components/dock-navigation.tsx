@@ -8,6 +8,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -28,18 +29,56 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
   const router = useRouter();
   const [showMercantia, setShowMercantia] = useState(false);
   const { state } = useCart();
+  const { user } = useAuth();
   const [isAnimating, setIsAnimating] = useState(false);
+  const [apiCartCount, setApiCartCount] = useState(0);
   const prevItemCountRef = useRef(state.itemCount);
+
+  // Get cart count - from API if logged in, from localStorage if not
+  const cartCount = user ? apiCartCount : state.itemCount;
+
+  // Fetch cart count from API for logged users
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      if (user) {
+        try {
+          const response = await fetch('/api/cart', {
+            headers: { 'x-user-id': user.id },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            // Calculate total quantity (sum of all item quantities)
+            const totalQuantity = data.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
+            setApiCartCount(totalQuantity);
+          }
+        } catch (error) {
+          console.error('Error fetching cart count:', error);
+        }
+      } else {
+        setApiCartCount(0);
+      }
+    };
+
+    fetchCartCount();
+
+    // Listen for cart updates
+    const handleCartSynced = () => {
+      fetchCartCount();
+    };
+
+    window.addEventListener('cartSynced', handleCartSynced);
+    return () => window.removeEventListener('cartSynced', handleCartSynced);
+  }, [user]);
 
   // Animate cart badge only when item is actually added (count increases)
   useEffect(() => {
-    if (state.itemCount > prevItemCountRef.current) {
+    if (cartCount > prevItemCountRef.current) {
       setIsAnimating(true);
       const timer = setTimeout(() => setIsAnimating(false), 600);
       return () => clearTimeout(timer);
     }
-    prevItemCountRef.current = state.itemCount;
-  }, [state.itemCount]);
+    prevItemCountRef.current = cartCount;
+  }, [cartCount]);
 
   // Handle Home navigation - always closes Mercantia and goes to home
   const handleHomeClick = () => {
@@ -57,7 +96,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
   // Handle Cart navigation
   const handleCartClick = () => {
     if (onNavigate) {
-      onNavigate('cart');
+      onNavigate('checkout');
     }
   };
 
@@ -123,14 +162,14 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
             </DockIcon>
 
             {/* ShoppingCart Icon - Only show when there are items in cart */}
-            {state.itemCount > 0 && (
+            {cartCount > 0 && (
               <DockIcon>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       onClick={handleCartClick}
                       className={`relative flex size-12 rounded-full items-center justify-center transition-colors ${
-                        currentPage === "cart" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
+                        currentPage === "checkout" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
                       }`}
                       aria-label="Cart"
                     >
@@ -143,12 +182,12 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
                             : 'scale-100'
                         }`}
                       >
-                        {state.itemCount}
+                        {cartCount}
                       </Badge>
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="z-[70]">
-                    <p>Carrinho ({state.itemCount})</p>
+                    <p>Carrinho ({cartCount})</p>
                   </TooltipContent>
                 </Tooltip>
               </DockIcon>

@@ -11,6 +11,8 @@ interface CartItem {
   productId: string
   quantity: number
   pricePerUnit: number
+  name?: string
+  image?: string
   product?: {
     id: string
     name: string
@@ -46,94 +48,103 @@ export function CartSummary({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Order Summary</CardTitle>
-        <CardDescription>{items.length} items in cart</CardDescription>
+        <CardTitle>Resumo do Pedido</CardTitle>
+        <CardDescription>{items.reduce((sum, item) => sum + item.quantity, 0)} {items.reduce((sum, item) => sum + item.quantity, 0) === 1 ? 'item' : 'itens'} no carrinho</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {/* Items List */}
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          {items.map((item) => (
-            <div key={item.id} className="flex gap-3 pb-3 border-b last:border-b-0">
-              {/* Product Image */}
-              {item.product?.images?.[0] && (
-                <div className="relative w-16 h-16 flex-shrink-0">
-                  <Image
-                    src={item.product.images[0].url}
-                    alt={item.product.name}
-                    fill
-                    className="object-cover rounded"
-                  />
-                </div>
-              )}
+          {items.map((item) => {
+            const productName = item.product?.name || item.name || 'Product'
+            const productImage = item.product?.images?.[0]?.url || item.image
 
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{item.product?.name || 'Product'}</p>
-                <p className="text-sm text-gray-500">${(item.pricePerUnit / 100).toFixed(2)}</p>
+            return (
+              <div key={item.id} className="pb-4 border-b last:border-b-0">
+                <div className="flex gap-3 items-start">
+                  {/* Product Image */}
+                  {productImage && (
+                    <div className="relative w-16 h-16 flex-shrink-0">
+                      <Image
+                        src={productImage}
+                        alt={productName}
+                        fill
+                        className="object-cover rounded"
+                      />
+                    </div>
+                  )}
 
-                {showActions && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <button
-                      onClick={() => onUpdateQuantity?.(item.id, Math.max(1, item.quantity - 1))}
-                      className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
-                    >
-                      −
-                    </button>
-                    <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => onUpdateQuantity?.(item.id, item.quantity + 1)}
-                      className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
-                    >
-                      +
-                    </button>
-                    <button
-                      onClick={() => onRemoveItem?.(item.id)}
-                      className="ml-auto p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium mb-1">{productName}</p>
+                    <p className="text-sm text-gray-600">
+                      Qty: {item.quantity} × R$ {(item.pricePerUnit / 100).toFixed(2)}
+                    </p>
+
+                    {showActions && (
+                      <div className="flex items-center gap-2 mt-3">
+                        <button
+                          onClick={() => onUpdateQuantity?.(item.id, Math.max(1, item.quantity - 1))}
+                          className="px-3 py-1 text-sm border rounded hover:bg-gray-100 transition-colors"
+                        >
+                          −
+                        </button>
+                        <span className="text-sm font-medium min-w-[2rem] text-center">{item.quantity}</span>
+                        <button
+                          onClick={() => onUpdateQuantity?.(item.id, item.quantity + 1)}
+                          className="px-3 py-1 text-sm border rounded hover:bg-gray-100 transition-colors"
+                        >
+                          +
+                        </button>
+                        <button
+                          onClick={() => onRemoveItem?.(item.id)}
+                          className="ml-auto px-3 py-1 text-sm text-red-600 hover:bg-red-50 border border-red-200 rounded transition-colors"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div className="text-right font-medium">
-                ${((item.pricePerUnit * item.quantity) / 100).toFixed(2)}
+                  <div className="text-right font-semibold whitespace-nowrap self-start">
+                    R$ {((item.pricePerUnit * item.quantity) / 100).toFixed(2)}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Totals */}
         <div className="space-y-2 pt-4 border-t">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Subtotal</span>
-            <span>${(subtotal / 100).toFixed(2)}</span>
+            <span>R$ {(subtotal / 100).toFixed(2)}</span>
           </div>
 
           {tax > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Tax</span>
-              <span>${(tax / 100).toFixed(2)}</span>
+              <span className="text-gray-600">Impostos</span>
+              <span>R$ {(tax / 100).toFixed(2)}</span>
             </div>
           )}
 
           {shipping > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Shipping</span>
-              <span>${(shipping / 100).toFixed(2)}</span>
+              <span className="text-gray-600">Frete</span>
+              <span>R$ {(shipping / 100).toFixed(2)}</span>
             </div>
           )}
 
           {discount > 0 && (
             <div className="flex justify-between text-sm text-green-600">
-              <span>Discount</span>
-              <span>-${(discount / 100).toFixed(2)}</span>
+              <span>Desconto</span>
+              <span>-R$ {(discount / 100).toFixed(2)}</span>
             </div>
           )}
 
           <div className="flex justify-between text-lg font-bold pt-2 border-t">
             <span>Total</span>
-            <span>${(total / 100).toFixed(2)}</span>
+            <span>R$ {(total / 100).toFixed(2)}</span>
           </div>
         </div>
       </CardContent>

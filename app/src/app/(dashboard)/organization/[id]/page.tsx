@@ -59,7 +59,7 @@ export default function OrganizationPage() {
       id: product.id,
       name: product.name,
       description: product.description || '',
-      price: product.price / 100, // Convert cents to dollars
+      price: product.price, // Price is already in cents from API
       image: product.images?.[0]?.url,
       schema_type: 'schema:Product',
       category: product.category || 'Product',
