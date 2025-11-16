@@ -135,7 +135,7 @@ export default function PersonPage() {
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h2 className="text-2xl font-bold mb-4">About</h2>
                 <p className="text-gray-600 mb-6">
-                  {person.properties.description || person.description || 'No description available.'}
+                  {person.description || 'No description available.'}
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

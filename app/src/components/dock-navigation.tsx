@@ -44,9 +44,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
   // Handle Home navigation - always closes Mercantia and goes to home
   const handleHomeClick = () => {
     setShowMercantia(false);
-    if (onNavigate) {
-      onNavigate('dashboard');
-    }
+    router.push('/');
   };
 
   // Handle Marketplace navigation

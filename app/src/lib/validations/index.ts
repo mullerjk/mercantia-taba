@@ -74,3 +74,4 @@ export function validateQueryParams<T extends z.ZodType>(
 // Re-export validation schemas
 export * from './auth'
 export * from './entities'
+export * from './marketplace'

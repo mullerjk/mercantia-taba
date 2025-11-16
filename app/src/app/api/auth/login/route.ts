@@ -9,7 +9,6 @@ import { validateData, loginSchema } from '@/lib/validations'
 import { applyRateLimit, addRateLimitHeaders } from '@/lib/middleware/rate-limit-middleware'
 import { RateLimitPresets } from '@/lib/rate-limit'
 import { setAuthCookie } from '@/lib/cookies'
-import { initializeCsrfProtection } from '@/lib/csrf'
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Validate input with Zod
     const validation = validateData(loginSchema, body)
-    if (!validation.success) {
+    if ('error' in validation && !validation.success) {
       return validation.error
     }
 
@@ -90,32 +89,32 @@ export async function POST(request: NextRequest) {
     // Return user data (without password hash)
     const { passwordHash: _, ...userData } = user
 
-    let response = NextResponse.json({
+    // Generate CSRF token
+    const csrfToken = (await import('@/lib/csrf')).generateCsrfToken()
+
+    const response = NextResponse.json({
       user: userData,
       token, // Still return token for backward compatibility (can be removed later)
-      message: 'Login successful'
-    })
-
-    // Set auth token as httpOnly cookie
-    response = setAuthCookie(response, token)
-
-    // Initialize CSRF protection
-    const { response: csrfResponse, token: csrfToken } = initializeCsrfProtection(response)
-    response = csrfResponse
-
-    // Add CSRF token to response body for client-side storage
-    const responseBody = await response.json()
-    response = NextResponse.json({
-      ...responseBody,
+      message: 'Login successful',
       csrfToken,
     })
 
-    // Re-apply cookies after modifying response
-    response = setAuthCookie(response, token)
-    const { response: finalResponse } = initializeCsrfProtection(response)
+    // Set auth token as httpOnly cookie
+    setAuthCookie(response, token)
+
+    // Set CSRF token as cookie
+    response.cookies.set({
+      name: 'csrf_token',
+      value: csrfToken,
+      httpOnly: false, // Must be accessible by JavaScript
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60, // 24 hours
+      path: '/',
+    })
 
     // Add rate limit headers to response
-    return addRateLimitHeaders(finalResponse, rateLimitResult)
+    return addRateLimitHeaders(response, rateLimitResult)
 
   } catch (error) {
     console.error('Login error:', error)

@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
-import { afterEach } from 'vitest'
+import { afterEach, vi } from 'vitest'
 
 // Cleanup after each test
 afterEach(() => {
@@ -8,8 +8,8 @@ afterEach(() => {
 })
 
 // Mock environment variables
-process.env.JWT_SECRET = 'test-secret-key-for-testing-only'
-process.env.NODE_ENV = 'test'
+;(process.env as any).JWT_SECRET = 'test-secret-key-for-testing-only'
+;(process.env as any).NODE_ENV = 'test'
 
 // Mock Next.js router
 vi.mock('next/navigation', () => ({

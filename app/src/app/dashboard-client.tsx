@@ -322,7 +322,7 @@ interface ChangelogItem {
   schemaType?: string;
 }
 
-export function DashboardClient({ initialPage }: { initialPage?: string }) {
+function DashboardClientContent({ initialPage }: { initialPage?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -780,5 +780,23 @@ export function DashboardClient({ initialPage }: { initialPage?: string }) {
         />
       </div>
     </SidebarProvider>
+  );
+}
+
+export function DashboardClient({ initialPage }: { initialPage?: string }) {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="absolute inset-0 h-8 w-8 animate-ping rounded-full bg-primary/20"></div>
+          </div>
+          <p className="text-sm text-muted-foreground">Carregando Mercantia...</p>
+        </div>
+      </div>
+    }>
+      <DashboardClientContent initialPage={initialPage} />
+    </Suspense>
   );
 }

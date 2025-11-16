@@ -195,3 +195,279 @@ export const witnessesRelations = relations(witnesses, ({ one }) => ({
     references: [entities.id],
   }),
 }))
+
+// ============================================
+// MARKETPLACE TABLES
+// ============================================
+
+// Stores table (vendor shops/businesses)
+export const stores = pgTable('stores', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  name: varchar('name', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 255 }).notNull().unique(),
+  description: text('description'),
+  logoUrl: text('logo_url'),
+  bannerUrl: text('banner_url'),
+
+  // Contact information
+  email: varchar('email', { length: 255 }),
+  phone: varchar('phone', { length: 20 }),
+  website: text('website'),
+
+  // Location (stored as JSONB for flexibility)
+  address: jsonb('address').$type<{
+    street?: string
+    city?: string
+    state?: string
+    zipCode?: string
+    country?: string
+  }>(),
+
+  // Store metadata
+  rating: integer('rating').default(0), // 0-5
+  reviewCount: integer('review_count').default(0),
+  isActive: boolean('is_active').default(true),
+  isVerified: boolean('is_verified').default(false),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at'),
+}, (table) => ({
+  userIdIdx: index('idx_stores_user_id').on(table.userId),
+  slugIdx: index('idx_stores_slug').on(table.slug),
+  isActiveIdx: index('idx_stores_is_active').on(table.isActive),
+}))
+
+// Products/Services table
+export const products = pgTable('products', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  storeId: uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+
+  name: varchar('name', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 255 }).notNull(),
+  description: text('description'),
+
+  // Pricing
+  price: integer('price').notNull(), // Price in cents (e.g., 9999 = $99.99)
+  cost: integer('cost'), // Cost for vendor (for profit tracking)
+  currency: varchar('currency', { length: 3 }).default('USD'),
+
+  // Product details
+  sku: varchar('sku', { length: 100 }),
+  images: jsonb('images').$type<Array<{ url: string; alt?: string }>>().default([]),
+
+  // Inventory
+  inventory: integer('inventory').default(0), // Stock quantity
+
+  // Categorization
+  category: varchar('category', { length: 100 }),
+  tags: jsonb('tags').$type<string[]>().default([]),
+
+  // Metadata
+  rating: integer('rating').default(0), // 0-5
+  reviewCount: integer('review_count').default(0),
+  isActive: boolean('is_active').default(true),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at'),
+}, (table) => ({
+  storeIdIdx: index('idx_products_store_id').on(table.storeId),
+  slugIdx: index('idx_products_slug').on(table.slug),
+  categoryIdx: index('idx_products_category').on(table.category),
+  isActiveIdx: index('idx_products_is_active').on(table.isActive),
+}))
+
+// Carts table
+export const carts = pgTable('carts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('idx_carts_user_id').on(table.userId),
+}))
+
+// Cart Items table
+export const cartItems = pgTable('cart_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  cartId: uuid('cart_id').notNull().references(() => carts.id, { onDelete: 'cascade' }),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+
+  quantity: integer('quantity').notNull().default(1),
+  pricePerUnit: integer('price_per_unit').notNull(), // Snapshot of price at time of addition (in cents)
+
+  addedAt: timestamp('added_at').defaultNow().notNull(),
+}, (table) => ({
+  cartIdIdx: index('idx_cart_items_cart_id').on(table.cartId),
+  productIdIdx: index('idx_cart_items_product_id').on(table.productId),
+}))
+
+// Orders table
+export const orders = pgTable('orders', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  storeId: uuid('store_id').notNull().references(() => stores.id, { onDelete: 'restrict' }),
+
+  // Order status: pending, confirmed, processing, shipped, delivered, cancelled, refunded
+  status: varchar('status', { length: 50 }).notNull().default('pending'),
+
+  // Pricing breakdown (in cents)
+  subtotal: integer('subtotal').notNull(), // Sum of item prices
+  tax: integer('tax').notNull().default(0),
+  shippingCost: integer('shipping_cost').notNull().default(0),
+  discount: integer('discount').notNull().default(0),
+  total: integer('total').notNull(), // subtotal + tax + shippingCost - discount
+
+  // Customer notes
+  notes: text('notes'),
+
+  // Metadata
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at'),
+  confirmedAt: timestamp('confirmed_at'),
+  shippedAt: timestamp('shipped_at'),
+  deliveredAt: timestamp('delivered_at'),
+}, (table) => ({
+  userIdIdx: index('idx_orders_user_id').on(table.userId),
+  storeIdIdx: index('idx_orders_store_id').on(table.storeId),
+  statusIdx: index('idx_orders_status').on(table.status),
+  createdAtIdx: index('idx_orders_created_at').on(table.createdAt),
+}))
+
+// Order Items table
+export const orderItems = pgTable('order_items', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orderId: uuid('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
+
+  quantity: integer('quantity').notNull(),
+  pricePerUnit: integer('price_per_unit').notNull(), // Price at time of order (in cents)
+  total: integer('total').notNull(), // quantity * pricePerUnit
+}, (table) => ({
+  orderIdIdx: index('idx_order_items_order_id').on(table.orderId),
+  productIdIdx: index('idx_order_items_product_id').on(table.productId),
+}))
+
+// Shipping Addresses table
+export const shippingAddresses = pgTable('shipping_addresses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  // Address details
+  fullName: varchar('full_name', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 20 }),
+  email: varchar('email', { length: 255 }),
+
+  street: varchar('street', { length: 255 }).notNull(),
+  city: varchar('city', { length: 100 }).notNull(),
+  state: varchar('state', { length: 100 }),
+  zipCode: varchar('zip_code', { length: 20 }).notNull(),
+  country: varchar('country', { length: 100 }).notNull(),
+
+  // Metadata
+  isDefault: boolean('is_default').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at'),
+}, (table) => ({
+  userIdIdx: index('idx_shipping_addresses_user_id').on(table.userId),
+  isDefaultIdx: index('idx_shipping_addresses_is_default').on(table.isDefault),
+}))
+
+// Order Addresses (snapshot of shipping address at order time)
+export const orderAddresses = pgTable('order_addresses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orderId: uuid('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }).unique(),
+
+  fullName: varchar('full_name', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 20 }),
+  email: varchar('email', { length: 255 }),
+
+  street: varchar('street', { length: 255 }).notNull(),
+  city: varchar('city', { length: 100 }).notNull(),
+  state: varchar('state', { length: 100 }),
+  zipCode: varchar('zip_code', { length: 20 }).notNull(),
+  country: varchar('country', { length: 100 }).notNull(),
+}, (table) => ({
+  orderIdIdx: index('idx_order_addresses_order_id').on(table.orderId),
+}))
+
+// ============================================
+// RELATIONS (for Drizzle ORM joins)
+// ============================================
+
+export const storesRelations = relations(stores, ({ one, many }) => ({
+  user: one(users, {
+    fields: [stores.userId],
+    references: [users.id],
+  }),
+  products: many(products),
+  orders: many(orders),
+}))
+
+export const productsRelations = relations(products, ({ one, many }) => ({
+  store: one(stores, {
+    fields: [products.storeId],
+    references: [stores.id],
+  }),
+  cartItems: many(cartItems),
+  orderItems: many(orderItems),
+}))
+
+export const cartsRelations = relations(carts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [carts.userId],
+    references: [users.id],
+  }),
+  items: many(cartItems),
+}))
+
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  cart: one(carts, {
+    fields: [cartItems.cartId],
+    references: [carts.id],
+  }),
+  product: one(products, {
+    fields: [cartItems.productId],
+    references: [products.id],
+  }),
+}))
+
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  user: one(users, {
+    fields: [orders.userId],
+    references: [users.id],
+  }),
+  store: one(stores, {
+    fields: [orders.storeId],
+    references: [stores.id],
+  }),
+  items: many(orderItems),
+  shippingAddress: one(orderAddresses),
+}))
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
+}))
+
+export const shippingAddressesRelations = relations(shippingAddresses, ({ one }) => ({
+  user: one(users, {
+    fields: [shippingAddresses.userId],
+    references: [users.id],
+  }),
+}))
+
+export const orderAddressesRelations = relations(orderAddresses, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderAddresses.orderId],
+    references: [orders.id],
+  }),
+}))

@@ -9,12 +9,12 @@ import { generateCsrfToken, setCsrfCookie } from '@/lib/csrf'
 export async function GET() {
   const token = generateCsrfToken()
 
-  let response = NextResponse.json({
+  const response = NextResponse.json({
     csrfToken: token,
   })
 
   // Set the token as a cookie
-  response = setCsrfCookie(response, token)
+  setCsrfCookie(response, token)
 
   return response
 }

@@ -180,7 +180,19 @@ export function KnowledgeGraphNavigator() {
             <EntityViewer
               entity={{
                 ...entityData.entity,
-                verifications: entityData.verifications
+                verifications: entityData.verifications.map((v: any) => ({
+                  id: v.id,
+                  entityId: v.entityId,
+                  method: v.method,
+                  verifiedBy: v.verifiedBy,
+                  timestamp: v.timestamp,
+                  expiresAt: v.expiresAt,
+                  proof: {
+                    type: v.proof?.type || 'unknown',
+                    url: v.proof?.url,
+                    hash: v.proof?.hash
+                  }
+                }))
               }}
               relations={[
                 ...entityData.relations.asAgent,

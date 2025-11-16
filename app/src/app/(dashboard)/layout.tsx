@@ -9,6 +9,7 @@ import {
   User,
   BarChart3,
   ShoppingBag,
+  ShoppingCart,
   Package,
   Users,
   Download,
@@ -21,8 +22,24 @@ import {
   Zap,
   ChevronRight,
   PanelLeft,
-  Globe,
-  Loader2,
+  Heart,
+  Apple,
+  Dumbbell,
+  Pill,
+  Activity,
+  Microscope,
+  Wallet,
+  TrendingDown,
+  TrendingUp,
+  Target,
+  ImageIcon,
+  FileText,
+  ShoppingCart as ShoppingCartIcon,
+  UtensilsCrossed,
+  Home as HomeIcon,
+  Car,
+  MessageCircle,
+  Star,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +55,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -49,120 +71,9 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { DockNavigation } from "@/components/dock-navigation";
-
-// Enhanced Schema Tree Component
-function EnhancedSchemaTree({ onEntitySelect }: { onEntitySelect?: (entityName: string) => void }) {
-  const [entities, setEntities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    const fetchEntities = async () => {
-      try {
-        const response = await fetch('/api/schema-hierarchy');
-        if (response.ok) {
-          const data = await response.json();
-          setEntities(data);
-        }
-      } catch (error) {
-        console.error('Failed to load schema entities:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEntities();
-  }, []);
-
-  const toggleExpansion = (entityId: string) => {
-    const updateEntityExpansion = (entities: any[]): any[] => {
-      return entities.map(entity => {
-        if (entity.id === entityId) {
-          return { ...entity, isExpanded: !entity.isExpanded };
-        }
-        if (entity.children && entity.children.length > 0) {
-          return { ...entity, children: updateEntityExpansion(entity.children) };
-        }
-        return entity;
-      });
-    };
-
-    setEntities(updateEntityExpansion(entities));
-  };
-
-  const handleEntitySelect = (entityId: string) => {
-    if (onEntitySelect) {
-      onEntitySelect(entityId);
-    }
-  };
-
-  const filteredEntities = entities.filter(entity =>
-    entity.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  const renderEntity = (entity: any, level = 0) => {
-    const hasChildren = entity.children && entity.children.length > 0;
-
-    return (
-      <div key={entity.id}>
-        <SidebarMenuItem>
-          <div
-            className={`flex items-center gap-2 py-1.5 px-2 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-md transition-colors w-full ${
-              level > 0 ? 'ml-4' : ''
-            }`}
-            onClick={() => handleEntitySelect(entity.id)}
-          >
-            <Globe className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-            <span className="truncate font-medium flex-1">{entity.name}</span>
-            {hasChildren && (
-              <button
-                className="w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 ml-auto"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleExpansion(entity.id);
-                }}
-              >
-                <ChevronRight className={`w-3 h-3 transition-transform ${entity.isExpanded ? 'rotate-90' : ''}`} />
-              </button>
-            )}
-          </div>
-        </SidebarMenuItem>
-
-        {hasChildren && entity.isExpanded && (
-          <div className="ml-2">
-            {entity.children.map((child: any) => renderEntity(child, level + 1))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="relative">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar entidades..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8 h-8 text-sm"
-        />
-      </div>
-      <div className="space-y-1 list-none">
-        {filteredEntities.map((entity) => renderEntity(entity))}
-      </div>
-    </div>
-  );
-}
+import { BusinessDropdown } from "@/components/business-dropdown";
 
 export default function DashboardLayout({
   children,
@@ -172,6 +83,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { signOut, user, loading } = useAuth();
+  const { state: cartState } = useCart();
   const [notifications] = useState(3);
 
   // Sidebar compact mode with persistence
@@ -192,21 +104,167 @@ export default function DashboardLayout({
     }
   };
 
-  // Redirect to marketplace if user is not logged in
+  // Account section expanded state with persistence
+  const [accountExpanded, setAccountExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('accountExpanded');
+      return saved ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+
+  const toggleAccountExpanded = () => {
+    const newState = !accountExpanded;
+    setAccountExpanded(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('accountExpanded', JSON.stringify(newState));
+    }
+  };
+
+  // Business section expanded state with persistence
+  const [businessExpanded, setBusinessExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('businessExpanded');
+      return saved ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+
+  const toggleBusinessExpanded = () => {
+    const newState = !businessExpanded;
+    setBusinessExpanded(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('businessExpanded', JSON.stringify(newState));
+    }
+  };
+
+  // Marketplace section expanded state with persistence
+  const [marketplaceExpanded, setMarketplaceExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('marketplaceExpanded');
+      return saved ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+
+  const toggleMarketplaceExpanded = () => {
+    const newState = !marketplaceExpanded;
+    setMarketplaceExpanded(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('marketplaceExpanded', JSON.stringify(newState));
+    }
+  };
+
+  // Health section expanded state with persistence
+  const [healthExpanded, setHealthExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('healthExpanded');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  const toggleHealthExpanded = () => {
+    const newState = !healthExpanded;
+    setHealthExpanded(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('healthExpanded', JSON.stringify(newState));
+    }
+  };
+
+  // Finance section expanded state with persistence
+  const [financeExpanded, setFinanceExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('financeExpanded');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  const toggleFinanceExpanded = () => {
+    const newState = !financeExpanded;
+    setFinanceExpanded(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('financeExpanded', JSON.stringify(newState));
+    }
+  };
+
+  // Inventory section expanded state with persistence
+  const [inventoryExpanded, setInventoryExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('inventoryExpanded');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  const toggleInventoryExpanded = () => {
+    const newState = !inventoryExpanded;
+    setInventoryExpanded(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('inventoryExpanded', JSON.stringify(newState));
+    }
+  };
+
+  // Relationships section expanded state with persistence
+  const [relationshipsExpanded, setRelationshipsExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('relationshipsExpanded');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  const toggleRelationshipsExpanded = () => {
+    const newState = !relationshipsExpanded;
+    setRelationshipsExpanded(newState);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('relationshipsExpanded', JSON.stringify(newState));
+    }
+  };
+
+  // Redirect to marketplace if user is not logged in, except for public marketplace pages
   useEffect(() => {
-    if (!loading && !user && pathname !== '/marketplace') {
+    if (!loading && !user && pathname !== '/marketplace' && !pathname.startsWith('/product/') && !pathname.startsWith('/department/') && !pathname.startsWith('/organization/')) {
       router.push('/marketplace');
     }
   }, [user, loading, pathname, router]);
 
   const getPageTitle = (path: string) => {
+    // Handle dynamic routes
+    if (path.startsWith('/product/')) return 'Produto';
+    if (path.startsWith('/department/')) return 'Departamento';
+    if (path.startsWith('/organization/')) return 'Organização';
+
     const titles: Record<string, string> = {
       '/': 'Dashboard',
       '/marketplace': 'Marketplace',
       '/account': 'Minha Conta',
       '/relationships': 'Relacionamentos',
+      '/relationships/chat': 'Chat',
+      '/relationships/connections': 'Relações',
+      '/relationships/contacts': 'Contatos',
+      '/relationships/favorites': 'Favoritos',
       '/inventory': 'Inventário',
+      '/inventory/media': 'Arquivos de Mídia',
+      '/inventory/documents': 'Documentos',
+      '/inventory/purchases': 'Produtos Comprados',
+      '/inventory/food': 'Alimentos',
+      '/inventory/real-estate': 'Imóveis',
+      '/inventory/vehicles': 'Automóveis',
       '/finances': 'Finanças',
+      '/finances/accounts': 'Contas Bancárias',
+      '/finances/cards': 'Cartões',
+      '/finances/expenses': 'Despesas',
+      '/finances/revenue': 'Receitas',
+      '/finances/goals': 'Metas Financeiras',
+      '/finances/reports': 'Relatórios Financeiros',
+      '/health': 'Saúde',
+      '/health/diet': 'Dieta',
+      '/health/workouts': 'Treinos',
+      '/health/medications': 'Medicações',
+      '/health/procedures': 'Procedimentos',
+      '/health/exams': 'Exames',
       '/business': 'Negócios',
       '/checkout': 'Finalizar Compra',
       '/settings': 'Configurações',
@@ -216,13 +274,40 @@ export default function DashboardLayout({
   };
 
   const getPageDescription = (path: string) => {
+    // Handle dynamic routes
+    if (path.startsWith('/product/')) return 'Veja os detalhes do produto';
+    if (path.startsWith('/department/')) return 'Explore produtos neste departamento';
+    if (path.startsWith('/organization/')) return 'Veja todos os produtos desta organização';
+
     const descriptions: Record<string, string> = {
       '/': 'Visão geral do seu negócio e atividades',
       '/marketplace': 'Explore produtos e serviços disponíveis',
       '/account': 'Gerencie suas informações pessoais',
       '/relationships': 'Gerencie conexões e rede de contatos',
-      '/inventory': 'Controle de produtos e estoque',
-      '/finances': 'Gestão financeira completa',
+      '/relationships/chat': 'Converse com seus contatos e conexões',
+      '/relationships/connections': 'Gerencie suas relações pessoais, profissionais e familiares',
+      '/relationships/contacts': 'Visualize e gerencie todos os seus contatos',
+      '/relationships/favorites': 'Visualize seus contatos favoritos marcados com estrela',
+      '/inventory': 'Controle e gerencie tudo que é de sua posse',
+      '/inventory/media': 'Organize seus arquivos de mídia (fotos, vídeos, áudios)',
+      '/inventory/documents': 'Organize seus documentos importantes',
+      '/inventory/purchases': 'Gerencie produtos que você comprou',
+      '/inventory/food': 'Controle seu estoque de alimentos',
+      '/inventory/real-estate': 'Gerencie seus imóveis e propriedades',
+      '/inventory/vehicles': 'Gerencie seus automóveis e documentação',
+      '/finances': 'Gerencie sua saúde financeira',
+      '/finances/accounts': 'Cadastre e gerencie suas contas bancárias',
+      '/finances/cards': 'Gerencie seus cartões de crédito e débito',
+      '/finances/expenses': 'Registre e acompanhe suas despesas',
+      '/finances/revenue': 'Registre suas fontes de renda e receitas',
+      '/finances/goals': 'Estabeleça e acompanhe suas metas financeiras',
+      '/finances/reports': 'Visualize relatórios e análises financeiras',
+      '/health': 'Gerencie sua saúde e bem-estar',
+      '/health/diet': 'Gerencie seus planos alimentares e refeições',
+      '/health/workouts': 'Acompanhe seus treinos e exercícios físicos',
+      '/health/medications': 'Controle seus medicamentos e prescrições',
+      '/health/procedures': 'Registro de procedimentos médicos realizados',
+      '/health/exams': 'Histórico e resultados de exames médicos',
       '/business': 'Gerencie seus negócios e oportunidades',
       '/checkout': 'Finalize suas compras',
       '/settings': 'Personalize sua experiência na Mercantia',
@@ -236,6 +321,41 @@ export default function DashboardLayout({
       return pathname === '/';
     }
     return pathname.startsWith(path);
+  };
+
+  // Check if in Account section (account, relationships, inventory, finances, health)
+  const isInAccountSection = () => {
+    return pathname === '/account' || pathname === '/relationships' || pathname.startsWith('/relationships/') || pathname === '/inventory' || pathname.startsWith('/inventory/') || pathname === '/finances' || pathname.startsWith('/finances/') || pathname === '/health' || pathname.startsWith('/health/');
+  };
+
+  // Check if in Relationships section
+  const isInRelationshipsSection = () => {
+    return pathname === '/relationships' || pathname.startsWith('/relationships/');
+  };
+
+  // Check if in Health section
+  const isInHealthSection = () => {
+    return pathname === '/health' || pathname.startsWith('/health/');
+  };
+
+  // Check if in Finance section
+  const isInFinanceSection = () => {
+    return pathname === '/finances' || pathname.startsWith('/finances/');
+  };
+
+  // Check if in Inventory section
+  const isInInventorySection = () => {
+    return pathname === '/inventory' || pathname.startsWith('/inventory/');
+  };
+
+  // Check if in Business section (business or business/[id])
+  const isInBusinessSection = () => {
+    return pathname === '/business' || pathname.startsWith('/business/');
+  };
+
+  // Check if in Marketplace section (marketplace, product, department, organization, or checkout)
+  const isInMarketplaceSection = () => {
+    return pathname === '/marketplace' || pathname.startsWith('/product/') || pathname.startsWith('/department/') || pathname.startsWith('/organization/') || pathname === '/checkout';
   };
 
   return (
@@ -263,7 +383,7 @@ export default function DashboardLayout({
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="px-2 flex-1 overflow-y-auto">
+          <SidebarContent className="px-2 flex-1 overflow-y-auto space-y-0">
             {/* Main Navigation */}
             <SidebarGroup>
               <SidebarGroupContent>
@@ -287,21 +407,113 @@ export default function DashboardLayout({
                     </SidebarMenuItem>
                   )}
 
-                  <SidebarMenuItem>
-                    <Link
-                      href="/marketplace"
-                      className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
-                        sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
-                      } ${
-                        isActive('/marketplace')
-                          ? 'bg-accent text-accent-foreground'
-                          : 'hover:bg-accent hover:text-accent-foreground'
-                      }`}
+                  {/* Marketplace - Collapsible Section */}
+                  {!sidebarCompact && (
+                    <Collapsible
+                      open={marketplaceExpanded}
+                      onOpenChange={toggleMarketplaceExpanded}
+                      className="w-full"
                     >
-                      <ShoppingBag className="w-5 h-5" />
-                      {!sidebarCompact && <span className="font-medium">Marketplace</span>}
-                    </Link>
-                  </SidebarMenuItem>
+                      <div className="flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors gap-3 px-3" style={{
+                        backgroundColor: isInMarketplaceSection() ? 'var(--accent)' : 'transparent',
+                        color: isInMarketplaceSection() ? 'var(--accent-foreground)' : 'inherit'
+                      }}>
+                        <Link
+                          href="/marketplace"
+                          className="flex items-center gap-3 flex-1"
+                        >
+                          <ShoppingBag className="w-5 h-5 flex-shrink-0" />
+                          <span className="font-medium">Marketplace</span>
+                        </Link>
+                        <CollapsibleTrigger asChild>
+                          <button
+                            className="p-1 hover:bg-accent/50 rounded transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {marketplaceExpanded ? (
+                              <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                            )}
+                          </button>
+                        </CollapsibleTrigger>
+                      </div>
+                      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapse data-[state=open]:animate-expand">
+                        <div className="ml-4 space-y-1 mt-2">
+                          {/* Organizações */}
+                          <Link
+                            href="/marketplace/organizations"
+                            className={`flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors ${
+                              pathname === '/marketplace/organizations'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                            }`}
+                          >
+                            <Users className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">Organizações</span>
+                          </Link>
+
+                          {/* Departamentos */}
+                          <Link
+                            href="/marketplace/departments"
+                            className={`flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors ${
+                              pathname === '/marketplace/departments'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                            }`}
+                          >
+                            <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">Departamentos</span>
+                          </Link>
+
+                          {/* Produtos */}
+                          <Link
+                            href="/marketplace/products"
+                            className={`flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors ${
+                              pathname === '/marketplace/products'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                            }`}
+                          >
+                            <Package className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">Produtos</span>
+                          </Link>
+
+                          {/* Carrinho - Only show if there are items */}
+                          {cartState.itemCount > 0 && (
+                            <Link
+                              href="/checkout"
+                              className={`flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors relative ${
+                                pathname === '/checkout'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                              }`}
+                            >
+                              <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                              <span className="truncate">Carrinho</span>
+                              <Badge variant="destructive" className="ml-auto h-5 w-5 flex items-center justify-center p-0 text-xs">
+                                {cartState.itemCount}
+                              </Badge>
+                            </Link>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                  {sidebarCompact && (
+                    <SidebarMenuItem>
+                      <Link
+                        href="/marketplace"
+                        className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors justify-center px-1 ${
+                          isInMarketplaceSection()
+                            ? 'bg-accent text-accent-foreground'
+                            : 'hover:bg-accent hover:text-accent-foreground'
+                        }`}
+                      >
+                        <ShoppingBag className="w-5 h-5" />
+                      </Link>
+                    </SidebarMenuItem>
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -309,129 +521,534 @@ export default function DashboardLayout({
             {/* Account & Business Management - Only for authenticated users */}
             {user && (
               <>
-                {/* Separator */}
-                <div className="mx-2 my-4 h-px bg-border border-t border-border"></div>
-
-                <SidebarGroup>
-                  <SidebarGroupContent>
+                <SidebarGroup className="py-0">
+                  <SidebarGroupContent className="py-0">
                     <SidebarMenu>
-                      {/* Minha Conta */}
-                      <SidebarMenuItem>
-                        <Link
-                          href="/account"
-                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
-                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
-                          } ${
-                            isActive('/account')
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
+                      {/* Minha Conta - Collapsible Section */}
+                      {!sidebarCompact && (
+                        <Collapsible
+                          open={accountExpanded}
+                          onOpenChange={toggleAccountExpanded}
+                          className="w-full"
                         >
-                          <User className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Minha Conta</span>}
-                        </Link>
-                      </SidebarMenuItem>
+                          <div className="flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors gap-3 px-3" style={{
+                            backgroundColor: isInAccountSection() ? 'var(--accent)' : 'transparent',
+                            color: isInAccountSection() ? 'var(--accent-foreground)' : 'inherit'
+                          }}>
+                            <Link
+                              href="/account"
+                              className="flex items-center gap-3 flex-1"
+                            >
+                              <User className="w-5 h-5 flex-shrink-0" />
+                              <span className="font-medium">Minha Conta</span>
+                            </Link>
+                            <CollapsibleTrigger asChild>
+                              <button
+                                className="p-1 hover:bg-accent/50 rounded transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {accountExpanded ? (
+                                  <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                                )}
+                              </button>
+                            </CollapsibleTrigger>
+                          </div>
+                          <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapse data-[state=open]:animate-expand">
+                            <div className="ml-4 space-y-1 mt-2">
+                              {/* Relacionamentos - Collapsible Subitem */}
+                              <Collapsible
+                                open={relationshipsExpanded}
+                                onOpenChange={toggleRelationshipsExpanded}
+                                className="w-full"
+                              >
+                                <div className="flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors" style={{
+                                  backgroundColor: isInRelationshipsSection() ? 'var(--accent)' : 'transparent',
+                                  color: isInRelationshipsSection() ? 'var(--accent-foreground)' : 'inherit'
+                                }}>
+                                  <Link
+                                    href="/relationships"
+                                    className="flex items-center gap-2 flex-1"
+                                  >
+                                    <Users className="w-4 h-4 flex-shrink-0" />
+                                    <span className="truncate">Relacionamentos</span>
+                                  </Link>
+                                  <CollapsibleTrigger asChild>
+                                    <button
+                                      className="p-1 hover:bg-accent/50 rounded transition-colors ml-auto"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {relationshipsExpanded ? (
+                                        <ChevronDown className="w-3 h-3 flex-shrink-0" />
+                                      ) : (
+                                        <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                                      )}
+                                    </button>
+                                  </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapse data-[state=open]:animate-expand">
+                                  <div className="ml-4 space-y-1 mt-2">
+                                    {/* Chat */}
+                                    <Link
+                                      href="/relationships/chat"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/relationships/chat'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <MessageCircle className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Chat</span>
+                                    </Link>
 
-                      {/* Relacionamentos */}
-                      <SidebarMenuItem>
-                        <Link
-                          href="/relationships"
-                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
-                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
-                          } ${
-                            isActive('/relationships')
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <Users className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Relacionamentos</span>}
-                        </Link>
-                      </SidebarMenuItem>
+                                    {/* Relações */}
+                                    <Link
+                                      href="/relationships/connections"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/relationships/connections'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Users className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Relações</span>
+                                    </Link>
 
-                      {/* Inventário */}
-                      <SidebarMenuItem>
-                        <Link
-                          href="/inventory"
-                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
-                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
-                          } ${
-                            isActive('/inventory')
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <Package className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Inventário</span>}
-                        </Link>
-                      </SidebarMenuItem>
+                                    {/* Contatos */}
+                                    <Link
+                                      href="/relationships/contacts"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/relationships/contacts'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Users className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Contatos</span>
+                                    </Link>
 
-                      {/* Finanças */}
-                      <SidebarMenuItem>
-                        <Link
-                          href="/finances"
-                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
-                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
-                          } ${
-                            isActive('/finances')
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
-                        >
-                          <BarChart3 className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Finanças</span>}
-                        </Link>
-                      </SidebarMenuItem>
+                                    {/* Favoritos */}
+                                    <Link
+                                      href="/relationships/favorites"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/relationships/favorites'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Star className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Favoritos</span>
+                                    </Link>
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+
+                              {/* Inventário - Collapsible Subitem */}
+                              <Collapsible
+                                open={inventoryExpanded}
+                                onOpenChange={toggleInventoryExpanded}
+                                className="w-full"
+                              >
+                                <div className="flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors" style={{
+                                  backgroundColor: isInInventorySection() ? 'var(--accent)' : 'transparent',
+                                  color: isInInventorySection() ? 'var(--accent-foreground)' : 'inherit'
+                                }}>
+                                  <Link
+                                    href="/inventory"
+                                    className="flex items-center gap-2 flex-1"
+                                  >
+                                    <Package className="w-4 h-4 flex-shrink-0" />
+                                    <span className="truncate">Inventário</span>
+                                  </Link>
+                                  <CollapsibleTrigger asChild>
+                                    <button
+                                      className="p-1 hover:bg-accent/50 rounded transition-colors ml-auto"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {inventoryExpanded ? (
+                                        <ChevronDown className="w-3 h-3 flex-shrink-0" />
+                                      ) : (
+                                        <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                                      )}
+                                    </button>
+                                  </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapse data-[state=open]:animate-expand">
+                                  <div className="ml-4 space-y-1 mt-2">
+                                    {/* Arquivos de Mídia */}
+                                    <Link
+                                      href="/inventory/media"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/inventory/media'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <ImageIcon className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Mídia</span>
+                                    </Link>
+
+                                    {/* Documentos */}
+                                    <Link
+                                      href="/inventory/documents"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/inventory/documents'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <FileText className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Documentos</span>
+                                    </Link>
+
+                                    {/* Produtos Comprados */}
+                                    <Link
+                                      href="/inventory/purchases"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/inventory/purchases'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <ShoppingCartIcon className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Compras</span>
+                                    </Link>
+
+                                    {/* Alimentos */}
+                                    <Link
+                                      href="/inventory/food"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/inventory/food'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <UtensilsCrossed className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Alimentos</span>
+                                    </Link>
+
+                                    {/* Imóveis */}
+                                    <Link
+                                      href="/inventory/real-estate"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/inventory/real-estate'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <HomeIcon className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Imóveis</span>
+                                    </Link>
+
+                                    {/* Automóveis */}
+                                    <Link
+                                      href="/inventory/vehicles"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/inventory/vehicles'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Car className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Automóveis</span>
+                                    </Link>
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+
+                              {/* Finanças - Collapsible Subitem */}
+                              <Collapsible
+                                open={financeExpanded}
+                                onOpenChange={toggleFinanceExpanded}
+                                className="w-full"
+                              >
+                                <div className="flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors" style={{
+                                  backgroundColor: isInFinanceSection() ? 'var(--accent)' : 'transparent',
+                                  color: isInFinanceSection() ? 'var(--accent-foreground)' : 'inherit'
+                                }}>
+                                  <Link
+                                    href="/finances"
+                                    className="flex items-center gap-2 flex-1"
+                                  >
+                                    <Wallet className="w-4 h-4 flex-shrink-0" />
+                                    <span className="truncate">Finanças</span>
+                                  </Link>
+                                  <CollapsibleTrigger asChild>
+                                    <button
+                                      className="p-1 hover:bg-accent/50 rounded transition-colors ml-auto"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {financeExpanded ? (
+                                        <ChevronDown className="w-3 h-3 flex-shrink-0" />
+                                      ) : (
+                                        <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                                      )}
+                                    </button>
+                                  </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapse data-[state=open]:animate-expand">
+                                  <div className="ml-4 space-y-1 mt-2">
+                                    {/* Contas Bancárias */}
+                                    <Link
+                                      href="/finances/accounts"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/finances/accounts'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Wallet className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Contas</span>
+                                    </Link>
+
+                                    {/* Cartões */}
+                                    <Link
+                                      href="/finances/cards"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/finances/cards'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <CreditCard className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Cartões</span>
+                                    </Link>
+
+                                    {/* Despesas */}
+                                    <Link
+                                      href="/finances/expenses"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/finances/expenses'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <TrendingDown className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Despesas</span>
+                                    </Link>
+
+                                    {/* Receitas */}
+                                    <Link
+                                      href="/finances/revenue"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/finances/revenue'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <TrendingUp className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Receitas</span>
+                                    </Link>
+
+                                    {/* Metas */}
+                                    <Link
+                                      href="/finances/goals"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/finances/goals'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Target className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Metas</span>
+                                    </Link>
+
+                                    {/* Relatórios */}
+                                    <Link
+                                      href="/finances/reports"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/finances/reports'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <BarChart3 className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Relatórios</span>
+                                    </Link>
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+
+                              {/* Saúde - Collapsible Subitem */}
+                              <Collapsible
+                                open={healthExpanded}
+                                onOpenChange={toggleHealthExpanded}
+                                className="w-full"
+                              >
+                                <div className="flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors" style={{
+                                  backgroundColor: isInHealthSection() ? 'var(--accent)' : 'transparent',
+                                  color: isInHealthSection() ? 'var(--accent-foreground)' : 'inherit'
+                                }}>
+                                  <Link
+                                    href="/health"
+                                    className="flex items-center gap-2 flex-1"
+                                  >
+                                    <Heart className="w-4 h-4 flex-shrink-0" />
+                                    <span className="truncate">Saúde</span>
+                                  </Link>
+                                  <CollapsibleTrigger asChild>
+                                    <button
+                                      className="p-1 hover:bg-accent/50 rounded transition-colors ml-auto"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {healthExpanded ? (
+                                        <ChevronDown className="w-3 h-3 flex-shrink-0" />
+                                      ) : (
+                                        <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                                      )}
+                                    </button>
+                                  </CollapsibleTrigger>
+                                </div>
+                                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapse data-[state=open]:animate-expand">
+                                  <div className="ml-4 space-y-1 mt-2">
+                                    {/* Dieta */}
+                                    <Link
+                                      href="/health/diet"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/health/diet'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Apple className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Dieta</span>
+                                    </Link>
+
+                                    {/* Treinos */}
+                                    <Link
+                                      href="/health/workouts"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/health/workouts'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Dumbbell className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Treinos</span>
+                                    </Link>
+
+                                    {/* Medicações */}
+                                    <Link
+                                      href="/health/medications"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/health/medications'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Pill className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Medicações</span>
+                                    </Link>
+
+                                    {/* Procedimentos */}
+                                    <Link
+                                      href="/health/procedures"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/health/procedures'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Activity className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Procedimentos</span>
+                                    </Link>
+
+                                    {/* Exames */}
+                                    <Link
+                                      href="/health/exams"
+                                      className={`flex items-center gap-2 py-1.5 px-3 rounded-md text-xs transition-colors ${
+                                        pathname === '/health/exams'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                                      }`}
+                                    >
+                                      <Microscope className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">Exames</span>
+                                    </Link>
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
+                      {sidebarCompact && (
+                        <SidebarMenuItem>
+                          <Link
+                            href="/account"
+                            className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors justify-center px-1 ${
+                              isInAccountSection()
+                                ? 'bg-accent text-accent-foreground'
+                                : 'hover:bg-accent hover:text-accent-foreground'
+                            }`}
+                          >
+                            <User className="w-5 h-5" />
+                          </Link>
+                        </SidebarMenuItem>
+                      )}
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </SidebarGroup>
-
-                {/* Separator */}
-                <div className="mx-2 my-4 h-px bg-border border-t border-border"></div>
 
                 {/* Negócios */}
-                <SidebarGroup>
-                  <SidebarGroupContent>
+                <SidebarGroup className="py-0">
+                  <SidebarGroupContent className="py-0">
                     <SidebarMenu>
-                      <SidebarMenuItem>
-                        <Link
-                          href="/business"
-                          className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors ${
-                            sidebarCompact ? 'justify-center px-1' : 'gap-3 px-3'
-                          } ${
-                            isActive('/business')
-                              ? 'bg-accent text-accent-foreground'
-                              : 'hover:bg-accent hover:text-accent-foreground'
-                          }`}
+                      {!sidebarCompact && (
+                        <Collapsible
+                          open={businessExpanded}
+                          onOpenChange={toggleBusinessExpanded}
+                          className="w-full"
                         >
-                          <Briefcase className="w-5 h-5" />
-                          {!sidebarCompact && <span className="font-medium">Negócios</span>}
-                        </Link>
-                      </SidebarMenuItem>
+                          <div className="flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors gap-3 px-3" style={{
+                            backgroundColor: isInBusinessSection() ? 'var(--accent)' : 'transparent',
+                            color: isInBusinessSection() ? 'var(--accent-foreground)' : 'inherit'
+                          }}>
+                            <Link
+                              href="/business"
+                              className="flex items-center gap-3 flex-1"
+                            >
+                              <Briefcase className="w-5 h-5 flex-shrink-0" />
+                              <span className="font-medium">Negócios</span>
+                            </Link>
+                            <CollapsibleTrigger asChild>
+                              <button
+                                className="p-1 hover:bg-accent/50 rounded transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {businessExpanded ? (
+                                  <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                                )}
+                              </button>
+                            </CollapsibleTrigger>
+                          </div>
+                          <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapse data-[state=open]:animate-expand">
+                            <div className="ml-4 space-y-1 mt-2">
+                              <BusinessDropdown sidebarCompact={sidebarCompact} />
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
+                      {sidebarCompact && (
+                        <SidebarMenuItem>
+                          <Link
+                            href="/business"
+                            className={`flex w-full items-center py-3 hover:bg-accent rounded-md transition-colors justify-center px-1 ${
+                              isInBusinessSection()
+                                ? 'bg-accent text-accent-foreground'
+                                : 'hover:bg-accent hover:text-accent-foreground'
+                            }`}
+                          >
+                            <Briefcase className="w-5 h-5" />
+                          </Link>
+                        </SidebarMenuItem>
+                      )}
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </SidebarGroup>
-
-                {/* Schema Explorer - Hidden when compact */}
-                {!sidebarCompact && (
-                  <>
-                    {/* Separator */}
-                    <div className="mx-2 my-4 h-px bg-border border-t border-border"></div>
-
-                    {/* Schema Explorer */}
-                    <SidebarGroup>
-                      <SidebarGroupContent>
-                        <div className="px-1">
-                          <EnhancedSchemaTree
-                            onEntitySelect={(entityName) => {
-                              console.log("Entity selected in Mercantia:", entityName);
-                            }}
-                          />
-                        </div>
-                      </SidebarGroupContent>
-                    </SidebarGroup>
-                  </>
-                )}
               </>
             )}
           </SidebarContent>

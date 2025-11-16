@@ -141,8 +141,8 @@ export class MockGenerator {
       address: this.generatePostalAddress(),
       geo: {
         '@type': 'GeoCoordinates',
-        latitude: parseFloat(faker.location.latitude()),
-        longitude: parseFloat(faker.location.longitude()),
+        latitude: faker.location.latitude(),
+        longitude: faker.location.longitude(),
       },
       telephone: faker.phone.number(),
       url: faker.internet.url(),
@@ -350,7 +350,7 @@ export class MockGenerator {
       cep: faker.location.zipCode('#####-###'),
       state: faker.location.state({ abbreviated: true }),
       city: faker.location.city(),
-      phone: faker.phone.number('(##) #####-####'),
+      phone: faker.phone.number(),
     }
   }
 

@@ -28,12 +28,12 @@ export async function POST(request: NextRequest) {
       .delete(userSessions)
       .where(eq(userSessions.token, token))
 
-    let response = NextResponse.json({
+    const response = NextResponse.json({
       message: 'Logged out successfully'
     })
 
     // Clear the auth cookie
-    response = clearAuthCookie(response)
+    clearAuthCookie(response)
 
     return response
 

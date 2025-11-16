@@ -37,8 +37,7 @@ export interface PersonSchema {
   affiliation?: Organization[]
   alumniOf?: EducationalOrganization[]
   award?: string[]
-  honorificPrefix?: string
-  colleague?: Person[]
+  colleague?: PersonSchema[]
 
   // Social & Web
   url?: string
@@ -50,12 +49,12 @@ export interface PersonSchema {
   weight?: string | QuantitativeValue
 
   // Relationships
-  spouse?: Person
-  children?: Person[]
-  parent?: Person[]
-  sibling?: Person[]
-  follows?: Person[]
-  knows?: Person[]
+  spouse?: PersonSchema
+  children?: PersonSchema[]
+  parent?: PersonSchema[]
+  sibling?: PersonSchema[]
+  follows?: PersonSchema[]
+  knows?: PersonSchema[]
 
   // Communication
   contactPoint?: ContactPoint[]
@@ -77,7 +76,7 @@ export interface PersonSchema {
 
   // Brand & Sponsor
   brand?: Brand
-  sponsor?: Organization | Person
+  sponsor?: Organization | PersonSchema
 
   // Tax & Legal
   taxID?: string
@@ -126,8 +125,10 @@ export interface Organization {
   url?: string
 }
 
-export interface EducationalOrganization extends Organization {
+export interface EducationalOrganization {
   '@type': 'EducationalOrganization'
+  name: string
+  url?: string
 }
 
 export interface ImageObject {
