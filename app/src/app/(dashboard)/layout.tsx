@@ -482,9 +482,9 @@ export default function DashboardLayout({
                           {/* Carrinho - Only show if there are items */}
                           {cartState.itemCount > 0 && (
                             <Link
-                              href="/checkout"
+                              href="/cart"
                               className={`flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors relative ${
-                                pathname === '/checkout'
+                                pathname === '/cart'
                                   ? 'bg-primary text-primary-foreground'
                                   : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                               }`}

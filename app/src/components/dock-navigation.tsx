@@ -57,7 +57,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
   // Handle Cart navigation
   const handleCartClick = () => {
     if (onNavigate) {
-      onNavigate('checkout');
+      onNavigate('cart');
     }
   };
 
@@ -130,7 +130,7 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
                     <button
                       onClick={handleCartClick}
                       className={`relative flex size-12 rounded-full items-center justify-center transition-colors ${
-                        currentPage === "checkout" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
+                        currentPage === "cart" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
                       }`}
                       aria-label="Cart"
                     >
