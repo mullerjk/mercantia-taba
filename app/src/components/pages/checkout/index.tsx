@@ -114,7 +114,7 @@ export default function CheckoutPage() {
 
       const result = await response.json()
       // Redirect to order confirmation
-      router.push(`/dashboard/my-orders?created=${result.orders[0].id}`)
+      router.push(`/my-orders?created=${result.orders[0].id}`)
     } catch (error) {
       console.error('Error during checkout:', error)
       setPaymentError('Erro ao finalizar pedido')
@@ -142,7 +142,7 @@ export default function CheckoutPage() {
 
         <div className="text-center py-12">
           <p className="text-gray-600 mb-4">Seu carrinho está vazio</p>
-          <Link href="/dashboard/cart">
+          <Link href="/cart">
             <Button>Voltar ao Carrinho</Button>
           </Link>
         </div>
@@ -163,7 +163,7 @@ export default function CheckoutPage() {
             if (currentStep === 'payment') {
               setCurrentStep('shipping')
             } else {
-              router.push('/dashboard/cart')
+              router.push('/cart')
             }
           }}
         >

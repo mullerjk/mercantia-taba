@@ -141,15 +141,15 @@ export default function CartPage() {
   if (!cart || cart.items.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Shopping Cart</h1>
+        <h1 className="text-3xl font-bold">Carrinho de Compras</h1>
 
         <div className="flex flex-col items-center justify-center py-12 border rounded-lg">
           <ShoppingCart className="w-16 h-16 text-gray-300 mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
-          <p className="text-gray-600 mb-6">Start shopping to add items to your cart</p>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Seu carrinho está vazio</h2>
+          <p className="text-gray-600 mb-6">Comece a comprar para adicionar itens ao seu carrinho</p>
 
-          <Link href="/dashboard/marketplace">
-            <Button size="lg">Continue Shopping</Button>
+          <Link href="/marketplace">
+            <Button size="lg">Continuar Comprando</Button>
           </Link>
         </div>
       </div>
@@ -160,12 +160,12 @@ export default function CartPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/marketplace">
+        <Link href="/marketplace">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="w-4 h-4" />
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold">Shopping Cart</h1>
+        <h1 className="text-3xl font-bold">Carrinho de Compras</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -185,29 +185,29 @@ export default function CartPage() {
           <div className="p-6 bg-gray-50 rounded-lg space-y-4">
             <div className="space-y-2">
               <p className="text-sm text-gray-600">Subtotal</p>
-              <p className="text-2xl font-bold">${(cart.totals.subtotal / 100).toFixed(2)}</p>
+              <p className="text-2xl font-bold">R$ {(cart.totals.subtotal / 100).toFixed(2)}</p>
             </div>
 
             <p className="text-xs text-gray-500">
-              Taxes and shipping costs will be calculated at checkout
+              Impostos e custos de frete serão calculados no checkout
             </p>
 
-            <Link href="/dashboard/checkout" className="block">
+            <Link href="/checkout" className="block">
               <Button className="w-full" size="lg" disabled={updating}>
                 {updating ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Updating...
+                    Atualizando...
                   </>
                 ) : (
-                  'Proceed to Checkout'
+                  'Ir para Checkout'
                 )}
               </Button>
             </Link>
 
-            <Link href="/dashboard/marketplace" className="block">
+            <Link href="/marketplace" className="block">
               <Button variant="outline" className="w-full">
-                Continue Shopping
+                Continuar Comprando
               </Button>
             </Link>
           </div>
@@ -215,7 +215,7 @@ export default function CartPage() {
           {/* Free Shipping Info */}
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-900">
-              Free shipping on orders over $100
+              Frete grátis em pedidos acima de R$ 100
             </p>
           </div>
         </div>
