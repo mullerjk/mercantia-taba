@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Tag, Package, Building2, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { useCart } from "@/contexts/CartContext";
+import { useCartAPI } from "@/hooks/useCartAPI";
 import { useTranslation } from "@/contexts/TranslationContext";
 
 interface ProductData {
@@ -41,21 +41,13 @@ export default function DepartmentPage() {
   const [products, setProducts] = useState<ProductData[]>([]);
   const [organization, setOrganization] = useState<OrganizationData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { addItem } = useCart();
+  const { addItem } = useCartAPI();
 
   const departmentName = decodeURIComponent(params.name as string);
 
-  const handleAddToCart = (product: ProductData) => {
+  const handleAddToCart = async (product: ProductData) => {
     if (product.price) {
-      addItem({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        image: product.image,
-        schema_type: product.schema_type,
-        category: product.category
-      });
+      await addItem(product.id, 1);
     }
   };
 

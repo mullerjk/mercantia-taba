@@ -71,10 +71,9 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/contexts/CartContext";
+import { useCartAPI } from "@/hooks/useCartAPI";
 import { DockNavigation } from "@/components/dock-navigation";
 import { BusinessDropdown } from "@/components/business-dropdown";
-import { CartSyncManager } from "@/components/CartSyncManager";
 
 export default function DashboardLayout({
   children,
@@ -84,9 +83,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { signOut, user, loading } = useAuth();
-  const { state: cartState } = useCart();
+  const { cart } = useCartAPI();
   const [notifications] = useState(3);
-  const [apiCartCount, setApiCartCount] = useState(0);
 
   // Sidebar compact mode with persistence
   const [sidebarCompact, setSidebarCompact] = useState(() => {
@@ -225,38 +223,7 @@ export default function DashboardLayout({
     }
   };
 
-  // Fetch cart count from API for logged users
-  useEffect(() => {
-    const fetchCartCount = async () => {
-      if (user) {
-        try {
-          const response = await fetch('/api/cart', {
-            headers: { 'x-user-id': user.id },
-          });
-          if (response.ok) {
-            const data = await response.json();
-            // Calculate total quantity (sum of all item quantities)
-            const totalQuantity = data.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
-            setApiCartCount(totalQuantity);
-          }
-        } catch (error) {
-          console.error('Error fetching cart count:', error);
-        }
-      } else {
-        setApiCartCount(0);
-      }
-    };
-
-    fetchCartCount();
-
-    // Listen for cart updates
-    const handleCartSynced = () => {
-      fetchCartCount();
-    };
-
-    window.addEventListener('cartSynced', handleCartSynced);
-    return () => window.removeEventListener('cartSynced', handleCartSynced);
-  }, [user]);
+  // Cart is now managed by useCartAPI hook - no need for additional fetching
 
   // Redirect to marketplace if user is not logged in, except for public marketplace pages
   useEffect(() => {
@@ -395,7 +362,6 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <CartSyncManager />
       <div className="min-h-screen flex w-full bg-background">
         {/* Enhanced Sidebar - Fixed position */}
         <Sidebar className={`hidden md:flex border-r bg-card transition-all duration-300 flex-col fixed left-0 top-0 h-screen z-10 ${
@@ -516,7 +482,7 @@ export default function DashboardLayout({
                           </Link>
 
                           {/* Carrinho - Only show if there are items */}
-                          {((user && apiCartCount > 0) || (!user && cartState.itemCount > 0)) && (
+                          {cart.itemCount > 0 && (
                             <Link
                               href="/checkout"
                               className={`flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors relative ${
@@ -528,7 +494,7 @@ export default function DashboardLayout({
                               <ShoppingCart className="w-4 h-4 flex-shrink-0" />
                               <span className="truncate">Carrinho</span>
                               <Badge variant="destructive" className="ml-auto h-5 w-5 flex items-center justify-center p-0 text-xs">
-                                {user ? apiCartCount : cartState.itemCount}
+                                {cart.itemCount}
                               </Badge>
                             </Link>
                           )}

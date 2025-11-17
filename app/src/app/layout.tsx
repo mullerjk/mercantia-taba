@@ -1,6 +1,5 @@
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { CartProvider } from "@/contexts/CartContext";
 import { TranslationProvider } from "@/contexts/TranslationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { JsonLd, createWebSiteJsonLd } from "@/components/seo/json-ld";
@@ -39,9 +38,7 @@ export default async function RootLayout({
           <ThemeProvider>
             <TranslationProvider>
               <AuthProvider>
-                <CartProvider>
-                  {children}
-                </CartProvider>
+                {children}
               </AuthProvider>
             </TranslationProvider>
           </ThemeProvider>

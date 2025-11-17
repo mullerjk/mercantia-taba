@@ -26,6 +26,7 @@ interface CartItem {
     images?: Array<{ url: string; alt?: string }>
     currentPrice: number
   }
+  image?: string
 }
 
 interface CartData {
@@ -59,7 +60,7 @@ export default function CheckoutPage() {
 
     const loadCart = async () => {
       try {
-        // First, try to use items from cart context (localStorage)
+        // Try to use items from cart context (localStorage) first
         if (cartContextState.items.length > 0) {
           const contextItems: CartItem[] = cartContextState.items.map(item => ({
             id: item.id,
@@ -73,6 +74,7 @@ export default function CheckoutPage() {
               images: item.image ? [{ url: item.image }] : undefined,
               currentPrice: item.price,
             },
+            image: item.image,
           }))
 
           const subtotal = contextItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0)
@@ -80,7 +82,7 @@ export default function CheckoutPage() {
           setCart({
             cart: { id: '', userId: user.id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
             items: contextItems,
-            totals: { subtotal, itemCount: contextItems.length },
+            totals: { subtotal, itemCount: contextItems.reduce((sum, item) => sum + item.quantity, 0) },
           })
 
           // Calculate tax and shipping
@@ -114,35 +116,43 @@ export default function CheckoutPage() {
     loadCart()
   }, [user, router, cartContextState.items])
 
-  const handleUpdateQuantity = async (itemId: string, quantity: number) => {
-    if (!user || !cart || quantity < 1) return
+  const handleUpdateQuantity = (itemId: string, quantity: number) => {
+    if (!cart || quantity < 1) return
 
     setUpdating(true)
     try {
-      const response = await fetch(`/api/cart/items?itemId=${itemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': user.id,
-        },
-        body: JSON.stringify({ quantity }),
+      // Update local state immediately
+      setCart((prev) => {
+        if (!prev) return null
+        const updatedItems = prev.items.map((item) =>
+          item.id === itemId ? { ...item, quantity } : item
+        )
+
+        const subtotal = updatedItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0)
+        const totalQuantity = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
+
+        return {
+          ...prev,
+          items: updatedItems,
+          totals: {
+            subtotal,
+            itemCount: totalQuantity,
+          },
+        }
       })
 
-      if (response.ok) {
-        setCart((prev) => {
-          if (!prev) return null
-          const updatedItems = prev.items.map((item) =>
+      // Also update localStorage for non-API items
+      const savedCart = localStorage.getItem('mercantiacart')
+      if (savedCart) {
+        try {
+          const cartItems = JSON.parse(savedCart)
+          const updatedItems = cartItems.map((item: CartItem) =>
             item.id === itemId ? { ...item, quantity } : item
           )
-          return {
-            ...prev,
-            items: updatedItems,
-            totals: {
-              subtotal: updatedItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0),
-              itemCount: updatedItems.length,
-            },
-          }
-        })
+          localStorage.setItem('mercantiacart', JSON.stringify(updatedItems))
+        } catch (error) {
+          console.error('Error updating localStorage:', error)
+        }
       }
     } catch (error) {
       console.error('Error updating quantity:', error)
@@ -151,29 +161,39 @@ export default function CheckoutPage() {
     }
   }
 
-  const handleRemoveItem = async (itemId: string) => {
-    if (!user || !cart) return
+  const handleRemoveItem = (itemId: string) => {
+    if (!cart) return
 
     setUpdating(true)
     try {
-      const response = await fetch(`/api/cart/items?itemId=${itemId}`, {
-        method: 'DELETE',
-        headers: { 'x-user-id': user.id },
+      // Update local state immediately
+      setCart((prev) => {
+        if (!prev) return null
+        const updatedItems = prev.items.filter((item) => item.id !== itemId)
+
+        const subtotal = updatedItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0)
+        const totalQuantity = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
+
+        return {
+          ...prev,
+          items: updatedItems,
+          totals: {
+            subtotal,
+            itemCount: totalQuantity,
+          },
+        }
       })
 
-      if (response.ok) {
-        setCart((prev) => {
-          if (!prev) return null
-          const updatedItems = prev.items.filter((item) => item.id !== itemId)
-          return {
-            ...prev,
-            items: updatedItems,
-            totals: {
-              subtotal: updatedItems.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0),
-              itemCount: updatedItems.length,
-            },
-          }
-        })
+      // Also update localStorage for non-API items
+      const savedCart = localStorage.getItem('mercantiacart')
+      if (savedCart) {
+        try {
+          const cartItems = JSON.parse(savedCart)
+          const updatedItems = cartItems.filter((item: CartItem) => item.id !== itemId)
+          localStorage.setItem('mercantiacart', JSON.stringify(updatedItems))
+        } catch (error) {
+          console.error('Error updating localStorage:', error)
+        }
       }
     } catch (error) {
       console.error('Error removing item:', error)
@@ -362,58 +382,65 @@ export default function CheckoutPage() {
               {currentStep === 'cart' ? (
                 <div className="space-y-4">
                   {cart.items.map((item) => {
-                    const productName = item.product?.name || item.name || 'Product'
+                    const productName = item.product?.name || 'Product'
                     const productImage = item.product?.images?.[0]?.url || item.image
+                    const itemTotal = (item.pricePerUnit * item.quantity) / 100
 
                     return (
-                      <div key={item.id} className="flex gap-4 pb-4 border-b last:border-b-0">
-                        {productImage && (
-                          <div className="relative w-20 h-20 flex-shrink-0">
-                            <Image
-                              src={productImage}
-                              alt={productName}
-                              fill
-                              className="object-cover rounded"
-                            />
-                          </div>
-                        )}
+                      <div key={item.id} className="pb-4 border-b last:border-b-0">
+                        <div className="flex gap-4">
+                          {productImage && (
+                            <div className="relative w-24 h-24 flex-shrink-0">
+                              <Image
+                                src={productImage}
+                                alt={productName}
+                                fill
+                                className="object-cover rounded"
+                              />
+                            </div>
+                          )}
 
-                        <div className="flex-1">
-                          <h3 className="font-semibold mb-2">{productName}</h3>
-                          <p className="text-sm text-gray-600 mb-3">R$ {(item.pricePerUnit / 100).toFixed(2)}</p>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start mb-2">
+                              <h3 className="font-semibold text-lg">{productName}</h3>
+                              <span className="text-lg font-bold text-primary">R$ {itemTotal.toFixed(2)}</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-4">Preço unitário: R$ {(item.pricePerUnit / 100).toFixed(2)}</p>
 
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 border rounded">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-2">
+                                <button
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                  disabled={updating || item.quantity <= 1}
+                                  className="p-2 hover:bg-gray-200 disabled:opacity-50 transition-colors rounded"
+                                  aria-label="Diminuir quantidade"
+                                >
+                                  <Minus className="w-5 h-5" />
+                                </button>
+                                <div className="flex flex-col items-center">
+                                  <span className="text-2xl font-bold min-w-[3rem] text-center">{item.quantity}</span>
+                                  <span className="text-xs text-gray-600">un</span>
+                                </div>
+                                <button
+                                  onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                  disabled={updating}
+                                  className="p-2 hover:bg-gray-200 disabled:opacity-50 transition-colors rounded"
+                                  aria-label="Aumentar quantidade"
+                                >
+                                  <Plus className="w-5 h-5" />
+                                </button>
+                              </div>
+
                               <button
-                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                                disabled={updating || item.quantity <= 1}
-                                className="p-1 hover:bg-gray-100 disabled:opacity-50 transition-colors"
-                              >
-                                <Minus className="w-4 h-4" />
-                              </button>
-                              <span className="font-semibold min-w-[2rem] text-center">{item.quantity}</span>
-                              <button
-                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => handleRemoveItem(item.id)}
                                 disabled={updating}
-                                className="p-1 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 hover:text-red-700 text-sm disabled:opacity-50 transition-colors rounded border border-red-200"
                               >
-                                <Plus className="w-4 h-4" />
+                                <Trash2 className="w-4 h-4" />
+                                Remover
                               </button>
                             </div>
-
-                            <button
-                              onClick={() => handleRemoveItem(item.id)}
-                              disabled={updating}
-                              className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm disabled:opacity-50 transition-colors ml-auto"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Remover
-                            </button>
                           </div>
-                        </div>
-
-                        <div className="text-right font-semibold">
-                          R$ {((item.pricePerUnit * item.quantity) / 100).toFixed(2)}
                         </div>
                       </div>
                     )

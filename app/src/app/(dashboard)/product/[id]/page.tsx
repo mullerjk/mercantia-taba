@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, Tag, Building2, ShoppingCart, Star, Image as ImageIcon } from "lucide-react"
 import Link from "next/link";
-import { useCart } from "@/contexts/CartContext";
+import { useCartAPI } from "@/hooks/useCartAPI";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { JsonLd, createProductJsonLd } from "@/components/seo/json-ld";
 
@@ -62,19 +62,11 @@ export default function ProductPage() {
   const [product, setProduct] = useState<ProductData | null>(null);
   const [organization, setOrganization] = useState<OrganizationData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { addItem } = useCart();
+  const { addItem } = useCartAPI();
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product && product.price) {
-      addItem({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price * 100, // Product.price is in dollars, convert to cents
-        image: product.image,
-        schema_type: product.schema_type,
-        category: product.category
-      });
+      await addItem(product.id, 1);
     }
   };
 

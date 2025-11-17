@@ -7,7 +7,7 @@ import { Home, ShoppingBag, ShoppingCart, User, Users, Package, DollarSign } fro
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { useCart } from "@/contexts/CartContext";
+import { useCartAPI } from "@/hooks/useCartAPI";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,47 +28,15 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
   const pathname = usePathname();
   const router = useRouter();
   const [showMercantia, setShowMercantia] = useState(false);
-  const { state } = useCart();
+  const { cart } = useCartAPI();
   const { user } = useAuth();
   const [isAnimating, setIsAnimating] = useState(false);
-  const [apiCartCount, setApiCartCount] = useState(0);
-  const prevItemCountRef = useRef(state.itemCount);
+  const prevItemCountRef = useRef(cart.itemCount);
 
-  // Get cart count - from API if logged in, from localStorage if not
-  const cartCount = user ? apiCartCount : state.itemCount;
+  // Get cart count from API
+  const cartCount = cart.itemCount;
 
-  // Fetch cart count from API for logged users
-  useEffect(() => {
-    const fetchCartCount = async () => {
-      if (user) {
-        try {
-          const response = await fetch('/api/cart', {
-            headers: { 'x-user-id': user.id },
-          });
-          if (response.ok) {
-            const data = await response.json();
-            // Calculate total quantity (sum of all item quantities)
-            const totalQuantity = data.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
-            setApiCartCount(totalQuantity);
-          }
-        } catch (error) {
-          console.error('Error fetching cart count:', error);
-        }
-      } else {
-        setApiCartCount(0);
-      }
-    };
-
-    fetchCartCount();
-
-    // Listen for cart updates
-    const handleCartSynced = () => {
-      fetchCartCount();
-    };
-
-    window.addEventListener('cartSynced', handleCartSynced);
-    return () => window.removeEventListener('cartSynced', handleCartSynced);
-  }, [user]);
+  // Cart is now managed by useCartAPI hook
 
   // Animate cart badge only when item is actually added (count increases)
   useEffect(() => {

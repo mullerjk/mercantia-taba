@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
-import { useCart } from '@/contexts/CartContext'
+import { useCartAPI } from '@/hooks/useCartAPI'
 import { ShoppingCart, Star, Package } from 'lucide-react'
 
 interface ProductCardProps {
@@ -43,7 +43,7 @@ export function ProductCard({
   storeRating = 0,
 }: ProductCardProps) {
   const { user } = useAuth()
-  const { addItem } = useCart()
+  const { addItem } = useCartAPI()
   const [loading, setLoading] = React.useState(false)
 
   const priceInDollars = (price / 100).toFixed(2)
@@ -59,34 +59,7 @@ export function ProductCard({
 
     setLoading(true)
     try {
-      // Add to local cart first for better UX
-      addItem({
-        id,
-        name,
-        description: description || '',
-        price,
-        image: imageUrl || undefined,
-        schema_type: 'schema:Product',
-        category: 'Product',
-      })
-
-      // Then sync with backend
-      const response = await fetch('/api/cart/items', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': user.id,
-        },
-        body: JSON.stringify({
-          productId: id,
-          quantity: 1,
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        console.error('Failed to add to cart:', error)
-      }
+      await addItem(id, 1)
     } catch (error) {
       console.error('Error adding to cart:', error)
     } finally {
