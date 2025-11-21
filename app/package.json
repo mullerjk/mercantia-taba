@@ -59,7 +59,7 @@
     "gray-matter": "^4.0.3",
     "idb": "^8.0.3",
     "jsonwebtoken": "^9.0.2",
-    "lucide-react": "^0.395.0",
+    "lucide-react": "^0.468.0",
     "motion": "^12.7.4",
     "nanoid": "^5.1.6",
     "next": "^16.0.3",
