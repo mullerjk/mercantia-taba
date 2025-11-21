@@ -4,21 +4,16 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "echo 'Use: cd app && npm run dev'",
-    "build": "echo 'Use: cd app && npm run build'",
-    "start": "echo 'Use: cd app && npm run start'",
+    "dev": "cd app && npm run dev",
+    "build": "cd app && npm run build",
+    "start": "cd app && npm run start",
     "dev:app": "cd app && npm run dev",
-    "dev:magicui": "echo 'MagicUI development: cd magicui/apps/www && npm run dev'",
     "build:app": "cd app && npm run build"
   },
   "engines": {
     "node": ">=18.17.0",
     "npm": ">=8.0.0"
   },
-  "dependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "bcryptjs": "^3.0.3",
-    "jsonwebtoken": "^9.0.2"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }

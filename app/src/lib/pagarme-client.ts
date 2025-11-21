@@ -1,25 +1,16 @@
-import PagarmeApiSDK from 'pagarme'
+import * as pagarme from 'pagarme'
 
 let client: any = null
 
 /**
  * Inicializa o cliente Pagar.me
  */
-export function initializePagarmeClient() {
+export async function initializePagarmeClient() { 
   if (client) return client
 
   try {
-    client = new PagarmeApiSDK.Client({
-      basicAuthCredentials: {
-        username: process.env.PAGARME_API_KEY || '',
-        password: process.env.PAGARME_SECRET_KEY || '',
-      },
-      timeout: 30000,
-      httpClientOptions: {
-        timeout: 30000,
-      },
-    })
-
+    // Pagar.me SDK v4 uses direct module usage
+    client = pagarme
     console.log('✅ Pagar.me client initialized successfully')
     return client
   } catch (error) {
@@ -42,42 +33,35 @@ export async function processCardPayment(
   customerId?: string,
   orderId?: string
 ) {
-  const pagarmeClient = initializePagarmeClient()
+  const pagarmeClient = await initializePagarmeClient() 
 
   try {
-    // Criar cliente se não existir
-    let customer = null
-    if (customerId) {
-      try {
-        customer = await pagarmeClient.customers.getCustomer(customerId)
-      } catch (error) {
-        console.log('Customer not found, creating new one')
-        customer = null
-      }
-    }
+    // Create customer first
+    const customer = await pagarmeClient.customers.create({
+      name: cardholderName,
+      email: `customer@mercantia.local`,
+      type: 'individual',
+    })
 
-    // Se não tem cliente, cria um novo
-    if (!customer) {
-      customer = await pagarmeClient.customers.createCustomer({
-        name: cardholderName,
-        email: `customer@mercantia.local`, // Você pode melhorar isso
-        type: 'individual',
-      })
-    }
+    // Create card
+    const card = await pagarmeClient.cards.create({
+      customer_id: customer.id,
+      holder_name: cardholderName,
+      number: cardNumber.replace(/\s/g, ''),
+      exp_month: expiryMonth,
+      exp_year: expiryYear,
+      cvv: cvv,
+    })
 
-    // Criar cobrança com cartão de crédito
-    const charge = await pagarmeClient.charges.createCharge({
+    // Create charge with credit card
+    const charge = await pagarmeClient.transactions.create({
       amount: amount,
       payment_method: 'credit_card',
       credit_card: {
-        card_number: cardNumber.replace(/\s/g, ''),
-        holder_name: cardholderName,
-        exp_month: expiryMonth,
-        exp_year: expiryYear,
-        cvv: cvv,
+        card_id: card.id,
+        installments: installments,
       },
       customer_id: customer.id,
-      installments: installments,
       metadata: {
         order_id: orderId || 'unknown',
       },
@@ -89,7 +73,7 @@ export async function processCardPayment(
       transactionId: charge.id,
       status: charge.status,
       amount: charge.amount,
-      installments: charge.installments,
+      installments: installments,
       paidAmount: charge.paid_amount,
       refundedAmount: charge.refunded_amount,
     }
@@ -107,53 +91,51 @@ export async function generatePixCharge(
   customerId?: string,
   orderId?: string
 ) {
-  const pagarmeClient = initializePagarmeClient()
+  const pagarmeClient = await initializePagarmeClient() 
 
+  // Criar um customer ID único
+  const externalId = `customer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  
   try {
-    // Criar cliente se não existir
-    let customer = null
-    if (customerId) {
-      try {
-        customer = await pagarmeClient.customers.getCustomer(customerId)
-      } catch (error) {
-        console.log('Customer not found, creating new one')
-        customer = null
-      }
-    }
+    // Criar customer com external_id obrigatório
+    const customer = await pagarmeClient.customers.create({
+      name: 'Customer Test',
+      email: `customer_${Date.now()}@mercantia.local`,
+      type: 'individual',
+      external_id: externalId,
+    })
 
-    // Se não tem cliente, cria um novo
-    if (!customer) {
-      customer = await pagarmeClient.customers.createCustomer({
-        name: 'Customer',
-        email: 'customer@mercantia.local',
-        type: 'individual',
-      })
-    }
+    console.log('✅ Customer created:', customer.id)
 
-    // Criar cobrança PIX
-    const charge = await pagarmeClient.charges.createCharge({
+    // Criar transação PIX
+    const transaction = await pagarmeClient.transactions.create({
       amount: amount,
       payment_method: 'pix',
-      pix: {
-        expires_in: 1800, // 30 minutos
-      },
       customer_id: customer.id,
       metadata: {
         order_id: orderId || 'unknown',
+        external_id: externalId,
       },
     })
 
-    console.log('✅ PIX charge generated:', charge.id)
+    console.log('✅ PIX transaction generated:', transaction.id)
 
     return {
-      transactionId: charge.id,
-      pixKey: charge.qr_code, // Pode variar conforme resposta da API
-      qrCode: charge.qr_code_url,
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-      status: charge.status,
+      transactionId: transaction.id,
+      pixKey: transaction.pix_key, 
+      qrCode: transaction.pix_qr_code, 
+      expiresAt: transaction.pix_expires_at ? new Date(transaction.pix_expires_at) : new Date(Date.now() + 30 * 60 * 1000),
+      status: transaction.status,
     }
-  } catch (error) {
-    console.error('❌ PIX charge error:', error)
+  } catch (error: any) {
+    console.error('❌ PIX transaction error:', error)
+    
+    // Verificar se é erro de IP não autorizado
+    if (error.response?.errors?.[0]?.message?.includes('IP de origem não autorizado')) {
+      throw new Error('IP de origem não autorizado. Configure o IP no painel do Pagar.me ou use uma VPN.')
+    }
+    
+    // Re-lançar o erro original
     throw error
   }
 }
@@ -166,10 +148,10 @@ export async function generateBoleto(
   customerId?: string,
   orderId?: string
 ) {
-  const pagarmeClient = initializePagarmeClient()
+  const pagarmeClient = await initializePagarmeClient() 
 
   try {
-    // Calcular data de vencimento (3 dias úteis)
+    // Calculate due date (3 business days)
     const dueDate = new Date()
     let businessDaysAdded = 0
     while (businessDaysAdded < 3) {
@@ -180,41 +162,20 @@ export async function generateBoleto(
       }
     }
 
-    // Criar cliente se não existir
-    let customer = null
-    if (customerId) {
-      try {
-        customer = await pagarmeClient.customers.getCustomer(customerId)
-      } catch (error) {
-        console.log('Customer not found, creating new one')
-        customer = null
-      }
-    }
+    // Create customer
+    const customer = await pagarmeClient.customers.create({
+      name: 'Customer',
+      email: 'customer@mercantia.local',
+      type: 'individual',
+    })
 
-    // Se não tem cliente, cria um novo
-    if (!customer) {
-      customer = await pagarmeClient.customers.createCustomer({
-        name: 'Customer',
-        email: 'customer@mercantia.local',
-        type: 'individual',
-      })
-    }
-
-    // Criar cobrança com boleto
-    const charge = await pagarmeClient.charges.createCharge({
+    // Create boleto transaction
+    const transaction = await pagarmeClient.transactions.create({
       amount: amount,
       payment_method: 'boleto',
       boleto: {
         due_date: dueDate.toISOString().split('T')[0],
         instructions: 'Pagável em qualquer banco. Não receber após a data de vencimento.',
-        bank_account: {
-          account: '123456',
-          account_digit: '1',
-          bank_code: '001',
-          holder_document: '00000000000000',
-          holder_name: 'Mercantia',
-          type: 'checking',
-        },
       },
       customer_id: customer.id,
       metadata: {
@@ -222,59 +183,68 @@ export async function generateBoleto(
       },
     })
 
-    console.log('✅ Boleto generated:', charge.id)
+    console.log('✅ Boleto transaction generated:', transaction.id)
 
     return {
-      transactionId: charge.id,
-      boletoNumber: charge.boleto?.boleto_line || 'N/A',
-      barcode: charge.boleto?.barcode || 'N/A',
+      transactionId: transaction.id,
+      boletoNumber: transaction.boleto_boleto_line || 'N/A',
+      barcode: transaction.boleto_barcode || 'N/A',
       dueDate: dueDate.toLocaleDateString('pt-BR'),
-      pdfUrl: charge.boleto?.pdf?.url || null,
-      status: charge.status,
+      pdfUrl: transaction.boleto_url || null,
+      status: transaction.status,
     }
   } catch (error) {
     console.error('❌ Boleto generation error:', error)
+    
+    // Verificar se é erro de IP não autorizado
+    if (error.response?.errors?.[0]?.message?.includes('IP de origem não autorizado')) {
+      throw new Error('IP de origem não autorizado. Configure o IP no painel do Pagar.me ou use uma VPN.')
+    }
+    
     throw error
   }
 }
 
 /**
- * Consulta status de uma cobrança
+ * Consulta status de uma transação
  */
-export async function getChargeStatus(chargeId: string) {
-  const pagarmeClient = initializePagarmeClient()
+export async function getTransactionStatus(transactionId: string) {
+  const pagarmeClient = await initializePagarmeClient() 
 
   try {
-    const charge = await pagarmeClient.charges.getCharge(chargeId)
+    const transaction = await pagarmeClient.transactions.find({
+      id: transactionId
+    })
 
     return {
-      id: charge.id,
-      status: charge.status,
-      amount: charge.amount,
-      paidAmount: charge.paid_amount,
-      refundedAmount: charge.refunded_amount,
-      paymentMethod: charge.payment_method,
-      createdAt: charge.created_at,
-      updatedAt: charge.updated_at,
+      id: transaction.id,
+      status: transaction.status,
+      amount: transaction.amount,
+      paidAmount: transaction.paid_amount,
+      refundedAmount: transaction.refunded_amount,
+      paymentMethod: transaction.payment_method,
+      createdAt: transaction.created_at,
+      updatedAt: transaction.updated_at,
     }
   } catch (error) {
-    console.error('❌ Error getting charge status:', error)
+    console.error('❌ Error getting transaction status:', error)
     throw error
   }
 }
 
 /**
- * Processa reembolso de uma cobrança
+ * Processa reembolso de uma transação
  */
-export async function refundCharge(chargeId: string, amount?: number) {
-  const pagarmeClient = initializePagarmeClient()
+export async function refundTransaction(transactionId: string, amount?: number) {
+  const pagarmeClient = await initializePagarmeClient() 
 
   try {
-    const refund = await pagarmeClient.charges.refundCharge(chargeId, {
+    const refund = await pagarmeClient.refunds.create({
+      transaction_id: transactionId,
       amount: amount, // Se não informar, reembolsa o valor total
     })
 
-    console.log('✅ Charge refunded:', refund.id)
+    console.log('✅ Transaction refunded:', refund.id)
 
     return {
       refundId: refund.id,
