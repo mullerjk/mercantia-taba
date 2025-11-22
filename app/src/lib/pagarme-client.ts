@@ -84,7 +84,7 @@ export async function processCardPayment(
 }
 
 /**
- * Gera uma cobrança PIX
+ * Gera uma cobrança PIX (versão melhorada)
  */
 export async function generatePixCharge(
   amount: number,
@@ -97,46 +97,97 @@ export async function generatePixCharge(
   const externalId = `customer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   
   try {
-    // Criar customer com external_id obrigatório
-    const customer = await pagarmeClient.customers.create({
-      name: 'Customer Test',
-      email: `customer_${Date.now()}@mercantia.local`,
-      type: 'individual',
-      external_id: externalId,
-    })
-
-    console.log('✅ Customer created:', customer.id)
-
-    // Criar transação PIX
-    const transaction = await pagarmeClient.transactions.create({
+    console.log('🔄 Generating PIX charge for amount:', amount)
+    
+    // Estrutura robusta para PIX
+    const transactionData = {
       amount: amount,
       payment_method: 'pix',
-      customer_id: customer.id,
+      customer: {
+        name: 'Customer Test',
+        email: `customer_${Date.now()}@mercantia.local`,
+        type: 'individual',
+        external_id: externalId,
+      },
       metadata: {
         order_id: orderId || 'unknown',
         external_id: externalId,
       },
-    })
+      // Configurações específicas do PIX
+      pix: {
+        expires_in: 3600, // 1 hora
+      }
+    }
+
+    console.log('📤 Transaction data:', JSON.stringify(transactionData, null, 2))
+
+    // Criar transação PIX
+    const transaction = await pagarmeClient.transactions.create(transactionData)
 
     console.log('✅ PIX transaction generated:', transaction.id)
+    console.log('📋 PIX response:', JSON.stringify(transaction, null, 2))
 
+    // Extrair dados do PIX de forma robusta
+    const pixData = transaction.pix || transaction.pix_qr_code || transaction
+    
     return {
       transactionId: transaction.id,
-      pixKey: transaction.pix_key, 
-      qrCode: transaction.pix_qr_code, 
+      pixKey: pixData.pix_key || pixData.key, 
+      qrCode: pixData.pix_qr_code || pixData.qr_code,
+      qrCodeImage: pixData.pix_qr_code_base64 || pixData.qr_code_base64,
       expiresAt: transaction.pix_expires_at ? new Date(transaction.pix_expires_at) : new Date(Date.now() + 30 * 60 * 1000),
       status: transaction.status,
+      amount: transaction.amount,
     }
   } catch (error: any) {
     console.error('❌ PIX transaction error:', error)
     
-    // Verificar se é erro de IP não autorizado
-    if (error.response?.errors?.[0]?.message?.includes('IP de origem não autorizado')) {
-      throw new Error('IP de origem não autorizado. Configure o IP no painel do Pagar.me ou use uma VPN.')
+    // Log detailed error information
+    console.error('📋 Full error object:', JSON.stringify(error, null, 2))
+    
+    if (error.response) {
+      console.error('📋 Error response details:', JSON.stringify(error.response, null, 2))
     }
     
-    // Re-lançar o erro original
-    throw error
+    if (error.response?.errors) {
+      console.error('📋 API errors:', JSON.stringify(error.response.errors, null, 2))
+    }
+    
+    // Extrair mensagem de erro clara
+    let errorMessage = 'Unknown error'
+    
+    if (error.response?.errors && Array.isArray(error.response.errors)) {
+      errorMessage = error.response.errors[0]?.message || 'API Error'
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
+    console.error('📋 Extracted error message:', errorMessage)
+    
+    // Verificar se é erro de IP não autorizado
+    if (errorMessage.includes('IP de origem não autorizado') || 
+        errorMessage.includes('origin IP') ||
+        errorMessage.includes('unauthorized')) {
+      throw new Error('IP de origem não autorizado. Configure o IP no painel do Pagar.me (Settings → Security → Allowed IPs) ou adicione 76.76.19.0/20 para Vercel.')
+    }
+    
+    // Verificar outros erros comuns
+    if (errorMessage.includes('API key') || errorMessage.includes('chave')) {
+      throw new Error('Chave API inválida. Verifique PAGARME_API_KEY e PAGARME_SECRET_KEY no Vercel.')
+    }
+    
+    if (errorMessage.includes('amount') || errorMessage.includes('valor')) {
+      throw new Error('Valor inválido para transação. Verifique o amount enviado.')
+    }
+    
+    if (errorMessage.includes('payment_method') || errorMessage.includes('pix')) {
+      throw new Error('Método de pagamento PIX não disponível. Verifique a conta no Pagar.me.')
+    }
+    
+    // Re-lançar o erro original com mais contexto
+    const enhancedError = new Error(`Pagar.me API Error (${error.status || 'Unknown Status'}): ${errorMessage}`)
+    enhancedError.cause = error
+    throw enhancedError
   }
 }
 
