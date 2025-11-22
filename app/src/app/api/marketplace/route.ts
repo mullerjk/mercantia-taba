@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exec } from 'child_process'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,72 +8,72 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category') || null
     const type = searchParams.get('type') || null
 
-    // Query PostgreSQL directly using psql command
-    let query = "SELECT * FROM schema_entities WHERE schema_type IN ('schema:Organization', 'schema:Product') ORDER BY created_at DESC"
+    // Create Supabase client
+    const supabase = await createServerSupabaseClient()
 
-    const psqlCommand = `psql "postgresql://postgres:postgres@127.0.0.1:54325/postgres" -c "${query}" -t -A -F '|'`
+    // Query schema_entities through Supabase
+    let query = supabase
+      .from('schema_entities')
+      .select('*')
+      .in('schema_type', ['schema:Organization', 'schema:Product'])
+      .order('created_at', { ascending: false })
 
-    const { stdout, stderr } = await execAsync(psqlCommand)
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+    }
 
-    if (stderr && !stdout) {
-      console.error('psql error:', stderr)
+    if (category) {
+      query = query.eq('schema_type', category)
+    }
+
+    if (type) {
+      const schemaType = type === 'organization' ? 'schema:Organization' : 'schema:Product'
+      query = query.eq('schema_type', schemaType)
+    }
+
+    const { data: entities, error } = await query
+
+    if (error) {
+      console.error('Supabase error:', error)
       return NextResponse.json([])
     }
 
-    // Parse the psql output
-    const lines = stdout.trim().split('\n').filter(line => line.trim())
+    if (!entities) {
+      return NextResponse.json([])
+    }
 
-    const entities = lines.map(line => {
-      const [id, name, description, schema_type, parent_types, properties, is_abstract, created_at, updated_at] = line.split('|')
-      const parsedProperties = properties ? JSON.parse(properties) : {}
+    // Transform to marketplace format
+    const marketplaceItems = entities.map((entity: any) => {
+      const parsedProperties = entity.properties || {}
 
       // Transform to marketplace format
       const marketplaceItem: any = {
-        id,
-        name,
-        description: parsedProperties.description || description || '',
-        type: schema_type === 'schema:Organization' ? 'organization' : 'product',
-        schema_type,
+        id: entity.id,
+        name: entity.name,
+        description: parsedProperties.description || entity.description || '',
+        type: entity.schema_type === 'schema:Organization' ? 'organization' : 'product',
+        schema_type: entity.schema_type,
         category: parsedProperties.category || parsedProperties.orgType || 'General',
-        created_at,
-        updated_at
+        created_at: entity.created_at,
+        updated_at: entity.updated_at
       }
 
       // Add product-specific fields
-      if (schema_type === 'schema:Product') {
+      if (entity.schema_type === 'schema:Product') {
         marketplaceItem.price = parsedProperties.price || 0
         marketplaceItem.image = parsedProperties.imageUrl
       }
 
       // Add organization-specific fields
-      if (schema_type === 'schema:Organization') {
+      if (entity.schema_type === 'schema:Organization') {
         marketplaceItem.location = parsedProperties.address
         marketplaceItem.rating = 4.0 // Default rating for organizations
       }
 
       return marketplaceItem
-    }).filter(entity => entity.id) // Filter out empty lines
+    })
 
-    // Apply filters
-    let filteredItems = entities
-
-    if (search) {
-      filteredItems = filteredItems.filter(item =>
-        item.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.description.toLowerCase().includes(search.toLowerCase()) ||
-        item.category.toLowerCase().includes(search.toLowerCase())
-      )
-    }
-
-    if (category) {
-      filteredItems = filteredItems.filter(item => item.schema_type === category)
-    }
-
-    if (type) {
-      filteredItems = filteredItems.filter(item => item.type === type)
-    }
-
-    return NextResponse.json(filteredItems)
+    return NextResponse.json(marketplaceItems)
   } catch (error) {
     console.error('Error in marketplace API:', error)
     return NextResponse.json([])
