@@ -32,13 +32,13 @@ class PagarMeV5ClientFixed {
       console.log('🌍 Using base URL:', this.baseURL)
       console.log('🔑 API Key prefix:', this.apiKey.substring(0, 10) + '...')
 
-      // ESTRUTURA CORRETA baseada no teste local
+      // ESTRUTURA CORRETA PARA PIX na API v5 baseada na documentação oficial
       const requestData = {
         items: [
           {
             description: 'Test Product',
             quantity: 1,
-            amount: amount  // API v5 usa 'amount', não 'unit_price'
+            amount: amount
           }
         ],
         customer: customerData,
@@ -46,12 +46,14 @@ class PagarMeV5ClientFixed {
           {
             payment_method: 'pix',
             pix: {
-              expires_in: 3600  // 1 hora
+              // expires_in em segundos (300 = 5 minutos)
+              expires_in: 300,
+              // expires_at: data futura opcional (deixa expires_in gerenciar)
             }
           }
         ],
         metadata: {
-          source: 'mercantia_app',
+          source: 'mercantia_app_pix_docs_fixed',
           ...metadata
         }
       }
