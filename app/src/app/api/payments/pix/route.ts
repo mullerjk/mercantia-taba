@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
         transactionId: pixCharge.transactionId,
         pixKey: pixCharge.pixKey,
         qrCode: pixCharge.qrCode,
-        qrCodeUrl: pixCharge.qrCodeUrl,
         expiresAt: pixCharge.expiresAt,
         message: 'PIX gerado com sucesso',
       },

@@ -20,13 +20,10 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "dotenv -e .env.local -- tsx src/db/seed.ts",
-    "db:seed-relations": "dotenv -e .env.local -- tsx src/lib/seed-relations.ts",
     "db:sync-vendure": "dotenv -e .env.local -- tsx src/lib/sync-vendure-to-graph.ts",
     "db:sync-seller-products": "dotenv -e .env.local -- tsx src/lib/sync-seller-products.ts"
   },
   "dependencies": {
-    "@faker-js/faker": "^8.4.1",
     "@hookform/resolvers": "^3.6.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-avatar": "^1.1.0",
@@ -73,6 +70,7 @@
     "react-markdown": "^9.0.1",
     "rehype-pretty-code": "^0.13.2",
     "rehype-stringify": "^10.0.0",
+
     "remark-gfm": "^4.0.0",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.0",
