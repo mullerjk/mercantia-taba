@@ -3,7 +3,7 @@
 import { Dock, DockIcon } from "@/components/magicui/dock";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { Home, ShoppingBag, ShoppingCart, User, Users, Package, DollarSign } from "lucide-react";
+import { Home, ShoppingBag, ShoppingCart, User, Users, Package, DollarSign, Receipt } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -68,6 +68,11 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
     }
   };
 
+  // Handle My Orders navigation
+  const handleMyOrdersClick = () => {
+    router.push('/my-orders');
+  };
+
   // Get current page from URL or pathname
   const getCurrentPage = () => {
     if (pathname === '/' || pathname === '') return 'dashboard';
@@ -105,8 +110,6 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
               </Tooltip>
             </DockIcon>
 
-
-
             {/* ShoppingBag Icon - Navigate to marketplace */}
             <DockIcon>
               <Tooltip>
@@ -125,6 +128,26 @@ export function DockNavigation({ showSidebar, onToggleSidebar, onNavigate }: Doc
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="z-[70]">
                   <p>Marketplace</p>
+                </TooltipContent>
+              </Tooltip>
+            </DockIcon>
+
+            {/* My Orders Icon */}
+            <DockIcon>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={handleMyOrdersClick}
+                    className={`flex size-12 rounded-full items-center justify-center transition-colors ${
+                      currentPage === "my-orders" ? "bg-secondary text-secondary-foreground" : "hover:bg-secondary"
+                    }`}
+                    aria-label="My Orders"
+                  >
+                    <Receipt className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="z-[70]">
+                  <p>Meus Pedidos</p>
                 </TooltipContent>
               </Tooltip>
             </DockIcon>
