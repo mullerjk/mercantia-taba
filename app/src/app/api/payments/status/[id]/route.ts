@@ -8,10 +8,11 @@ import { supabaseService } from '@/lib/supabase-service'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const paymentId = params.id
+    const resolvedParams = await params
+    const paymentId = resolvedParams.id
     console.log(`🔍 Verificando status do pagamento: ${paymentId}`)
 
     if (!paymentId) {
