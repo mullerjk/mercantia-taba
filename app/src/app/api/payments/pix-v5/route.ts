@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generatePixChargeV5 } from '@/lib/pagarme-client-v5'
 
 // MOCK PIX para funcionamento imediato
-const USE_MOCK = true // Set to false when Pagar.me keys are properly configured
+const USE_MOCK = false // Set to false when Pagar.me keys are properly configured
 
 async function createMockPixCharge(amount: number) {
   console.log('🎭 Using MOCK PIX charge for testing:', amount)
