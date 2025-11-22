@@ -9,8 +9,23 @@ export async function initializePagarmeClient() {
   if (client) return client
 
   try {
-    // Pagar.me SDK v4 uses direct module usage
-    client = pagarme
+    // Get API keys from environment variables
+    const apiKey = process.env.PAGARME_SECRET_KEY || process.env.PAGARME_API_KEY
+    const environment = process.env.PAGARME_ENVIRONMENT || 'sandbox'
+    
+    if (!apiKey) {
+      throw new Error('PAGARME_SECRET_KEY ou PAGARME_API_KEY não encontrada nas variáveis de ambiente')
+    }
+
+    console.log('🔑 API Key found:', apiKey ? '✅' : '❌')
+    console.log('🌍 Environment:', environment)
+    
+    // Pagar.me SDK v4 uses direct module usage with apiKey
+    client = pagarme.connect({
+      apiKey: apiKey,
+      environment: environment
+    })
+    
     console.log('✅ Pagar.me client initialized successfully')
     return client
   } catch (error) {
@@ -163,6 +178,11 @@ export async function generatePixCharge(
     }
     
     console.error('📋 Extracted error message:', errorMessage)
+    
+    // Verificar se é erro de autorização (401)
+    if (error.response?.status === 401 || errorMessage.includes('Authorization') || errorMessage.includes('denied')) {
+      throw new Error('Erro 401 - Autorização negada. Verifique as chaves de API (PAGARME_SECRET_KEY ou PAGARME_API_KEY) no Vercel.')
+    }
     
     // Verificar se é erro de IP não autorizado
     if (errorMessage.includes('IP de origem não autorizado') || 
