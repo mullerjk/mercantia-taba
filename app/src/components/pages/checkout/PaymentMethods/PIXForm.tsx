@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, Copy, Loader2, CheckCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -33,8 +33,67 @@ export function PIXForm({
   } | null>(null)
   const [copied, setCopied] = useState(false)
   const [paymentCompleted, setPaymentCompleted] = useState(false)
-  const [countdown, setCountdown] = useState(1800) // 30 minutos em segundos
+  const [countdown, setCountdown] = useState(300) // 5 minutos em segundos (reduzido!)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
+  const countdownRef = useRef<NodeJS.Timeout | null>(null)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Função para verificar status do pedido
+  const checkPaymentStatus = async () => {
+    if (!pixData?.transactionId) return
+
+    try {
+      console.log('🔍 Verificando status do pagamento...')
+
+      // Verificar se há mudanças no localStorage (webhook pode ter atualizado)
+      const lastPaymentCheck = localStorage.getItem(`pix_payment_${pixData.transactionId}`)
+      const currentTime = Date.now()
+
+      if (lastPaymentCheck) {
+        const timeElapsed = currentTime - parseInt(lastPaymentCheck)
+
+        // Se verificação foi recente, aguardar
+        if (timeElapsed < 10000) { // 10 segundos
+          return
+        }
+      }
+
+      // Fazer uma requisição simples para verificar se houve mudança
+      const response = await fetch(`/api/payments/status/${pixData.transactionId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const statusData = await response.json()
+
+        if (statusData.status === 'confirmed') {
+          console.log('🎉 Pagamento confirmado via webhook!')
+
+          // Limpar timers
+          if (countdownRef.current) {
+            clearInterval(countdownRef.current)
+          }
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current)
+          }
+
+          // Chamar callback de sucesso
+          setPaymentCompleted(true)
+          onSuccess(pixData.transactionId, 'pix')
+        }
+      }
+
+      // Atualizar timestamp da verificação
+      localStorage.setItem(`pix_payment_${pixData.transactionId}`, currentTime.toString())
+
+    } catch (error) {
+      console.log('⚠️ Erro ao verificar status (não crítica):', error)
+    }
+  }
 
   const handleGeneratePIX = async () => {
     setProcessing(true)
@@ -63,18 +122,23 @@ export function PIXForm({
       }
 
       const result = await response.json()
-      setPixData(result)
-      
-      // INÍCIO MELHORIA UX: Mostrar PIX por 30 segundos antes de redirecionar
-      setShowSuccessMessage(true)
-      
-      // Timer para countdown
+      console.log('✅ PIX data received:', result)
+
+      // Configurar dados do PIX para exibir imediatamente
+      setPixData({
+        qrCode: result.payment.qrCode,
+        qrCodeUrl: result.payment.qrCodeImage,
+        pixKey: result.payment.pixKey,
+        transactionId: result.payment.id
+      })
+
+      // Timer para countdown de 5 minutos
       const timer = setInterval(() => {
         setCountdown(prev => {
           if (prev <= 1) {
             clearInterval(timer)
             setPaymentCompleted(true)
-            onSuccess(result.transactionId, 'pix')
+            onSuccess(result.payment.id, 'pix')
             return 0
           }
           return prev - 1
@@ -107,49 +171,35 @@ export function PIXForm({
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
-  // Se PIX foi gerado e está exibindo
-  if (pixData && showSuccessMessage) {
-    return (
-      <div className="space-y-4">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <h3 className="font-semibold text-green-900">PIX Gerado com Sucesso!</h3>
-          </div>
-          <p className="text-sm text-green-800 mb-4">
-            Complete o pagamento. Você será redirecionado automaticamente em {formatTime(countdown)} segundos.
-          </p>
-          <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
-            <p className="text-sm text-blue-900">
-              <strong>Aguarde alguns segundos</strong> para ver o QR code e a chave PIX.
-            </p>
-          </div>
-        </div>
+  // Effect para iniciar polling quando PIX for gerado
+  useEffect(() => {
+    if (pixData && !paymentCompleted) {
+      // Iniciar polling a cada 30 segundos
+      pollingRef.current = setInterval(checkPaymentStatus, 30000) // 30 segundos
 
-        {/* Timer */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-2">Aguarde...</p>
-              <p className="text-2xl font-bold text-blue-600">{formatTime(countdown)}</p>
-              <p className="text-xs text-gray-500">segundos restantes</p>
-            </div>
-          </CardContent>
-        </Card>
+      // Limpar polling quando componente desmontar ou payment completar
+      return () => {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current)
+        }
+      }
+    }
+  }, [pixData, paymentCompleted])
 
-        {/* Mensagem informativa */}
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Acompanhe seu pedido na página "Meus Pedidos" após o pagamento.
-          </AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
+  // Effect para limpar timers quando componente desmontar
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current)
+      }
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+      }
+    }
+  }, [])
 
-  // Se PIX foi gerado e carregado
-  if (pixData && !showSuccessMessage) {
+  // Se PIX foi gerado, mostrar imediatamente
+  if (pixData) {
     return (
       <div className="space-y-4">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
