@@ -3,99 +3,146 @@ import * as pagarme from 'pagarme'
 let client: any = null
 
 /**
- * Inicializa o cliente Pagar.me
+ * Inicializa o cliente Pagar.me com múltiplos métodos
  */
 export async function initializePagarmeClient() { 
   if (client) return client
 
   try {
     // Get API keys from environment variables
-    const apiKey = process.env.PAGARME_SECRET_KEY || process.env.PAGARME_API_KEY
+    const secretKey = process.env.PAGARME_SECRET_KEY
+    const apiKey = process.env.PAGARME_API_KEY
     const environment = process.env.PAGARME_ENVIRONMENT || 'sandbox'
     
-    if (!apiKey) {
+    console.log('🔑 Environment variables check:')
+    console.log('  - PAGARME_SECRET_KEY:', secretKey ? `${secretKey.substring(0, 10)}...` : '❌ MISSING')
+    console.log('  - PAGARME_API_KEY:', apiKey ? `${apiKey.substring(0, 10)}...` : '❌ MISSING') 
+    console.log('  - Environment:', environment)
+    
+    if (!secretKey && !apiKey) {
       throw new Error('PAGARME_SECRET_KEY ou PAGARME_API_KEY não encontrada nas variáveis de ambiente')
     }
 
-    console.log('🔑 API Key found:', apiKey ? '✅' : '❌')
-    console.log('🌍 Environment:', environment)
+    // Try different initialization methods for Pagar.me SDK
+    let initializedClient = null
     
-    // Pagar.me SDK v4 - uso direto do módulo sem connect
-    client = pagarme
+    // Method 1: Direct module usage (most common)
+    try {
+      initializedClient = pagarme
+      console.log('✅ Method 1: Direct module initialized')
+    } catch (error) {
+      console.log('❌ Method 1 failed:', error.message)
+    }
+
+    // Method 2: With credentials
+    if (!initializedClient && secretKey) {
+      try {
+        initializedClient = pagarme(secretKey)
+        console.log('✅ Method 2: Initialized with secret key')
+      } catch (error) {
+        console.log('❌ Method 2 failed:', error.message)
+      }
+    }
+
+    // Method 3: With API key
+    if (!initializedClient && apiKey) {
+      try {
+        initializedClient = pagarme(apiKey)
+        console.log('✅ Method 3: Initialized with API key')
+      } catch (error) {
+        console.log('❌ Method 3 failed:', error.message)
+      }
+    }
+
+    // Method 4: With options object
+    if (!initializedClient && (secretKey || apiKey)) {
+      try {
+        const key = secretKey || apiKey
+        initializedClient = pagarme({
+          apiKey: key,
+          environment: environment
+        })
+        console.log('✅ Method 4: Initialized with options object')
+      } catch (error) {
+        console.log('❌ Method 4 failed:', error.message)
+      }
+    }
+
+    if (!initializedClient) {
+      throw new Error('Failed to initialize Pagar.me client with any method')
+    }
+
+    client = initializedClient
     console.log('✅ Pagar.me client initialized successfully')
+    
+    // Test connection by making a simple API call
+    try {
+      console.log('🧪 Testing API connection...')
+      // This will help us see what error we get
+      const testResult = await client.balance.find()
+      console.log('✅ API connection successful:', testResult)
+    } catch (testError) {
+      console.log('⚠️ API test failed (this is expected if keys are invalid):', testError.message)
+      // Don't throw here, just log - the real error will show during transaction
+    }
+    
     return client
   } catch (error) {
     console.error('❌ Error initializing Pagar.me client:', error)
+    console.error('🔍 Error details:', {
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+      name: error.name
+    })
     throw error
   }
 }
 
 /**
- * Processa pagamento com cartão de crédito
+ * Testa a conexão com o Pagar.me
  */
-export async function processCardPayment(
-  cardNumber: string,
-  cardholderName: string,
-  expiryMonth: number,
-  expiryYear: number,
-  cvv: string,
-  amount: number,
-  installments: number = 1,
-  customerId?: string,
-  orderId?: string
-) {
-  const pagarmeClient = await initializePagarmeClient() 
-
+export async function testPagarMeConnection() {
   try {
-    // Create customer first
-    const customer = await pagarmeClient.customers.create({
-      name: cardholderName,
-      email: `customer@mercantia.local`,
-      type: 'individual',
-    })
-
-    // Create card
-    const card = await pagarmeClient.cards.create({
-      customer_id: customer.id,
-      holder_name: cardholderName,
-      number: cardNumber.replace(/\s/g, ''),
-      exp_month: expiryMonth,
-      exp_year: expiryYear,
-      cvv: cvv,
-    })
-
-    // Create charge with credit card
-    const charge = await pagarmeClient.transactions.create({
-      amount: amount,
-      payment_method: 'credit_card',
-      credit_card: {
-        card_id: card.id,
-        installments: installments,
-      },
-      customer_id: customer.id,
-      metadata: {
-        order_id: orderId || 'unknown',
-      },
-    })
-
-    console.log('✅ Card payment processed:', charge.id)
-
+    const client = await initializePagarmeClient()
+    
+    console.log('🧪 Testing balance API...')
+    const balance = await client.balance.find()
+    
     return {
-      transactionId: charge.id,
-      status: charge.status,
-      amount: charge.amount,
-      installments: installments,
-      paidAmount: charge.paid_amount,
-      refundedAmount: charge.refunded_amount,
+      success: true,
+      balance: balance,
+      message: 'API connection successful'
     }
   } catch (error) {
-    console.error('❌ Card payment error:', error)
-    throw error
+    console.error('❌ API connection test failed:', error)
+    
+    // Provide detailed error analysis
+    let errorType = 'Unknown'
+    let errorMessage = error.message
+    
+    if (error.response?.status === 401) {
+      errorType = 'Authentication Error'
+      errorMessage = 'Chaves de API inválidas ou expiradas'
+    } else if (error.message.includes('ENOTFOUND') || error.message.includes('DNS')) {
+      errorType = 'Network Error' 
+      errorMessage = 'Problema de conectividade de rede'
+    } else if (error.response?.status === 403) {
+      errorType = 'Authorization Error'
+      errorMessage = 'IP não autorizado ou conta suspensa'
+    }
+    
+    return {
+      success: false,
+      errorType: errorType,
+      message: errorMessage,
+      fullError: error.message,
+      status: error.response?.status
+    }
   }
 }
 
 /**
- * Gera uma cobrança PIX (versão corrigida)
+ * Gera uma cobrança PIX (versão melhorada com teste de conexão)
  */
 export async function generatePixCharge(
   amount: number,
@@ -110,7 +157,19 @@ export async function generatePixCharge(
   try {
     console.log('🔄 Generating PIX charge for amount:', amount)
     
-    // Estrutura simplificada para PIX sem connect
+    // Test connection first
+    try {
+      console.log('🧪 Testing connection before transaction...')
+      const test = await pagarmeClient.balance.find()
+      console.log('✅ Connection test successful')
+    } catch (testError) {
+      console.log('⚠️ Connection test failed:', testError.message)
+      if (testError.response?.status === 401) {
+        throw new Error('Chaves de API inválidas - verifique PAGARME_SECRET_KEY no Vercel')
+      }
+    }
+    
+    // Estrutura simplificada para PIX
     const transactionData = {
       amount: amount,
       payment_method: 'pix',
@@ -123,10 +182,6 @@ export async function generatePixCharge(
       metadata: {
         order_id: orderId || 'unknown',
         external_id: externalId,
-      },
-      // Configurações específicas do PIX
-      pix: {
-        expires_in: 3600, // 1 hora
       }
     }
 
@@ -177,7 +232,7 @@ export async function generatePixCharge(
     
     // Verificar se é erro de autorização (401)
     if (error.response?.status === 401 || errorMessage.includes('Authorization') || errorMessage.includes('denied')) {
-      throw new Error('Erro 401 - Autorização negada. Verifique as chaves de API (PAGARME_SECRET_KEY ou PAGARME_API_KEY) no Vercel.')
+      throw new Error('ERRO 401 - Chaves de API inválidas. Verifique PAGARME_SECRET_KEY no Vercel. As chaves devem começar com "sk_test_" para sandbox.')
     }
     
     // Verificar se é erro de IP não autorizado
@@ -208,71 +263,6 @@ export async function generatePixCharge(
 }
 
 /**
- * Gera um boleto
- */
-export async function generateBoleto(
-  amount: number,
-  customerId?: string,
-  orderId?: string
-) {
-  const pagarmeClient = await initializePagarmeClient() 
-
-  try {
-    // Calculate due date (3 business days)
-    const dueDate = new Date()
-    let businessDaysAdded = 0
-    while (businessDaysAdded < 3) {
-      dueDate.setDate(dueDate.getDate() + 1)
-      const dayOfWeek = dueDate.getDay()
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        businessDaysAdded++
-      }
-    }
-
-    // Create customer
-    const customer = await pagarmeClient.customers.create({
-      name: 'Customer',
-      email: 'customer@mercantia.local',
-      type: 'individual',
-    })
-
-    // Create boleto transaction
-    const transaction = await pagarmeClient.transactions.create({
-      amount: amount,
-      payment_method: 'boleto',
-      boleto: {
-        due_date: dueDate.toISOString().split('T')[0],
-        instructions: 'Pagável em qualquer banco. Não receber após a data de vencimento.',
-      },
-      customer_id: customer.id,
-      metadata: {
-        order_id: orderId || 'unknown',
-      },
-    })
-
-    console.log('✅ Boleto transaction generated:', transaction.id)
-
-    return {
-      transactionId: transaction.id,
-      boletoNumber: transaction.boleto_boleto_line || 'N/A',
-      barcode: transaction.boleto_barcode || 'N/A',
-      dueDate: dueDate.toLocaleDateString('pt-BR'),
-      pdfUrl: transaction.boleto_url || null,
-      status: transaction.status,
-    }
-  } catch (error) {
-    console.error('❌ Boleto generation error:', error)
-    
-    // Verificar se é erro de IP não autorizado
-    if (error.response?.errors?.[0]?.message?.includes('IP de origem não autorizado')) {
-      throw new Error('IP de origem não autorizado. Configure o IP no painel do Pagar.me ou use uma VPN.')
-    }
-    
-    throw error
-  }
-}
-
-/**
  * Consulta status de uma transação
  */
 export async function getTransactionStatus(transactionId: string) {
@@ -295,32 +285,6 @@ export async function getTransactionStatus(transactionId: string) {
     }
   } catch (error) {
     console.error('❌ Error getting transaction status:', error)
-    throw error
-  }
-}
-
-/**
- * Processa reembolso de uma transação
- */
-export async function refundTransaction(transactionId: string, amount?: number) {
-  const pagarmeClient = await initializePagarmeClient() 
-
-  try {
-    const refund = await pagarmeClient.refunds.create({
-      transaction_id: transactionId,
-      amount: amount, // Se não informar, reembolsa o valor total
-    })
-
-    console.log('✅ Transaction refunded:', refund.id)
-
-    return {
-      refundId: refund.id,
-      status: refund.status,
-      amount: refund.amount,
-      reason: refund.reason,
-    }
-  } catch (error) {
-    console.error('❌ Refund error:', error)
     throw error
   }
 }
