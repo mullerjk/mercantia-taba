@@ -128,12 +128,53 @@ export async function findOrderByPagarMeId(pagarmeOrderId: string) {
 export async function createPaymentRecord(orderId: string, paymentData: any) {
   try {
     console.log(`💰 Creating payment record for order ${orderId}`)
-
-    // This would typically create a record in a payments table
-    // For now, we'll just log it
     console.log('💰 Payment data:', paymentData)
 
-    // TODO: Implement payments table or add to orders metadata
+    // Check if payments table exists
+    // For now, add to order notes as fallback since payments table might not exist
+    const { data: existingOrder } = await supabaseService
+      .from('orders')
+      .select('notes')
+      .eq('id', orderId)
+      .single()
+
+    let notes: any = {}
+    if (existingOrder?.notes) {
+      try {
+        notes = JSON.parse(existingOrder.notes)
+      } catch (e) {
+        // notes corrupted, start fresh
+        notes = {}
+      }
+    }
+
+    // Add payment data to notes
+    const updatedNotes = {
+      ...notes,
+      payments: [
+        ...(notes.payments || []),
+        {
+          ...paymentData,
+          recorded_at: new Date().toISOString(),
+        }
+      ]
+    }
+
+    // Update order with payment information
+    const { error: updateError } = await supabaseService
+      .from('orders')
+      .update({
+        notes: JSON.stringify(updatedNotes),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+
+    if (updateError) {
+      console.error(`❌ Error updating order ${orderId} with payment data:`, updateError)
+      throw updateError
+    }
+
+    console.log(`✅ Payment record created for order ${orderId}`)
     return true
 
   } catch (error) {
