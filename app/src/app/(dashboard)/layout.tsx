@@ -481,6 +481,19 @@ export default function DashboardLayout({
                             <span className="truncate">Produtos</span>
                           </Link>
 
+                          {/* Meus Pedidos */}
+                          <Link
+                            href="/my-orders"
+                            className={`flex items-center gap-2 py-2 px-3 rounded-md text-sm transition-colors ${
+                              pathname === '/my-orders'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                            }`}
+                          >
+                            <FileText className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">Meus Pedidos</span>
+                          </Link>
+
                           {/* Carrinho - Only show if there are items */}
                           {cart.itemCount > 0 && (
                             <Link
