@@ -20,12 +20,8 @@ export async function initializePagarmeClient() {
     console.log('🔑 API Key found:', apiKey ? '✅' : '❌')
     console.log('🌍 Environment:', environment)
     
-    // Pagar.me SDK v4 uses direct module usage with apiKey
-    client = pagarme.connect({
-      apiKey: apiKey,
-      environment: environment
-    })
-    
+    // Pagar.me SDK v4 - uso direto do módulo sem connect
+    client = pagarme
     console.log('✅ Pagar.me client initialized successfully')
     return client
   } catch (error) {
@@ -99,7 +95,7 @@ export async function processCardPayment(
 }
 
 /**
- * Gera uma cobrança PIX (versão melhorada)
+ * Gera uma cobrança PIX (versão corrigida)
  */
 export async function generatePixCharge(
   amount: number,
@@ -114,7 +110,7 @@ export async function generatePixCharge(
   try {
     console.log('🔄 Generating PIX charge for amount:', amount)
     
-    // Estrutura robusta para PIX
+    // Estrutura simplificada para PIX sem connect
     const transactionData = {
       amount: amount,
       payment_method: 'pix',
