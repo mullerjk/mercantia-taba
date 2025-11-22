@@ -1,8 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { 
   ShoppingBag, 
   Package, 
@@ -24,31 +22,6 @@ import { useAuth } from '@/contexts/AuthContext'
 
 export default function HomePage() {
   const { user, loading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    // Redirect authenticated users to dashboard
-    if (!loading && user) {
-      router.push('/dashboard')
-    }
-  }, [user, loading, router])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
-  // For authenticated users, the useEffect will redirect them
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5">
@@ -101,11 +74,20 @@ export default function HomePage() {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="px-8">
-              <Link href="/auth/login">
-                Fazer Login
-              </Link>
-            </Button>
+            {user ? (
+              <Button asChild variant="outline" size="lg" className="px-8">
+                <Link href="/(dashboard)">
+                  <Users className="w-5 h-5 mr-2" />
+                  Meus Painéis
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline" size="lg" className="px-8">
+                <Link href="/auth/login">
+                  Fazer Login
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 
