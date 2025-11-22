@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useState,
 } from "react"
-import { AnimatePresence, motion, MotionProps } from "motion/react"
+import { AnimatePresence, motion, MotionProps } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
@@ -46,7 +46,9 @@ export const AnimatedList = React.memo(
 
         return () => clearTimeout(timeout)
       }
-    }, [index, delay, childrenArray.length])
+    }
+    // Make sure to include all dependencies for useEffect
+    , [index, delay, childrenArray.length]) // Added childrenArray.length to dependencies
 
     const itemsToShow = useMemo(() => {
       const result = childrenArray.slice(0, index + 1).reverse()

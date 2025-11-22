@@ -6,7 +6,7 @@ import {
   HTMLMotionProps,
   motion,
   useMotionValue,
-} from "motion/react"
+} from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
