@@ -64,8 +64,10 @@ class PagarMeV5ClientFixed {
 
       console.log('✅ V5 CORRECTED Response received:', JSON.stringify(response.data, null, 2))
 
-      // Extrair dados do PIX da resposta v5
+      // DEBUG: Log especificamente a estrutura de payments
+      console.log('🔍 Payments array:', response.data.payments)
       const pixPayment = response.data.payments?.find((p: any) => p.payment_method === 'pix')
+      console.log('📱 Found PIX payment:', pixPayment)
 
       return {
         transactionId: response.data.id,
