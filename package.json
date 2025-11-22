@@ -15,5 +15,7 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "next": "16.0.3"
+  }
 }

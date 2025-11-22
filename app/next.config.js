@@ -4,9 +4,7 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', 'bcryptjs'],
-  },
+  serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   async redirects() {
     return [
       {
