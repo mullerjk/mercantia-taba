@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
   Activity,
   ArrowUpRight,
@@ -69,15 +68,7 @@ interface ChangelogItem {
 
 export default function DashboardHome() {
   const { user, loading } = useAuth();
-  const router = useRouter();
   const [changelogItems, setChangelogItems] = useState<ChangelogItem[]>([]);
-
-  // Redirect to dashboard for authenticated users
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router]);
 
   // Fetch real entities from database
   useEffect(() => {
@@ -191,15 +182,6 @@ export default function DashboardHome() {
     );
   }
 
-  // Redirect authenticated users to dashboard
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -215,7 +197,7 @@ export default function DashboardHome() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card 
           className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => router.push('/(dashboard)/marketplace')}
+          onClick={() => window.location.href = '/(dashboard)/marketplace'}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -233,7 +215,7 @@ export default function DashboardHome() {
 
         <Card 
           className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => router.push('/(dashboard)/organization')}
+          onClick={() => window.location.href = '/(dashboard)/organization'}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -251,7 +233,7 @@ export default function DashboardHome() {
 
         <Card 
           className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => router.push('/(dashboard)/relationships')}
+          onClick={() => window.location.href = '/(dashboard)/relationships'}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -269,7 +251,7 @@ export default function DashboardHome() {
 
         <Card 
           className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => router.push('/(dashboard)/inventory')}
+          onClick={() => window.location.href = '/(dashboard)/inventory'}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
