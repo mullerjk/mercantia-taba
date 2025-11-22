@@ -82,16 +82,16 @@ export default function MyOrdersPage() {
 
   if (orders.length === 0) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">My Orders</h1>
+      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
+        <h1 className="text-3xl font-bold">Meus Pedidos</h1>
 
         <div className="flex flex-col items-center justify-center py-12 border rounded-lg">
           <Package className="w-16 h-16 text-gray-300 mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">No orders yet</h2>
-          <p className="text-gray-600 mb-6">Start shopping to place your first order</p>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Nenhum pedido ainda</h2>
+          <p className="text-gray-600 mb-6">Comece comprando para fazer seu primeiro pedido</p>
 
-          <Link href="/dashboard/marketplace">
-            <Button size="lg">Start Shopping</Button>
+          <Link href="/marketplace">
+            <Button size="lg">Começar Compras</Button>
           </Link>
         </div>
       </div>
@@ -101,17 +101,17 @@ export default function MyOrdersPage() {
   const selectedOrder = selectedOrderId ? orders.find((o) => o.id === selectedOrderId) : null
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">My Orders</h1>
-        <p className="text-gray-600 mt-1">Track and manage your orders</p>
+        <h1 className="text-3xl font-bold">Meus Pedidos</h1>
+        <p className="text-gray-600 mt-1">Acompanhe e gerencie seus pedidos</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Orders List */}
         <div className="lg:col-span-1 space-y-3">
-          <h2 className="font-semibold text-lg mb-4">Orders ({orders.length})</h2>
+          <h2 className="font-semibold text-lg mb-4">Pedidos ({orders.length})</h2>
 
           {orders.map((order) => (
             <Card
@@ -125,7 +125,7 @@ export default function MyOrdersPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="font-semibold text-sm">
-                      Order #{order.id.slice(0, 8).toUpperCase()}
+                      Pedido #{order.id.slice(0, 8).toUpperCase()}
                     </p>
                     <Badge className="text-xs">{order.status}</Badge>
                   </div>
@@ -135,7 +135,7 @@ export default function MyOrdersPage() {
                   </p>
 
                   <p className="font-bold text-lg">
-                    ${(order.total / 100).toFixed(2)}
+                    R$ {(order.total / 100).toFixed(2)}
                   </p>
                 </div>
               </CardContent>
@@ -160,16 +160,16 @@ export default function MyOrdersPage() {
               {/* Order Details Card */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Order Details</CardTitle>
+                  <CardTitle>Detalhes do Pedido</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">Order ID</p>
+                      <p className="text-sm text-gray-600">ID do Pedido</p>
                       <p className="font-mono text-sm">{selectedOrder.id.slice(0, 12)}...</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Order Date</p>
+                      <p className="text-sm text-gray-600">Data do Pedido</p>
                       <p className="text-sm">
                         {new Date(selectedOrder.createdAt).toLocaleDateString()}
                       </p>
@@ -180,25 +180,25 @@ export default function MyOrdersPage() {
                   <div className="pt-4 border-t space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Subtotal</span>
-                      <span>${(selectedOrder.subtotal / 100).toFixed(2)}</span>
+                      <span>R$ {(selectedOrder.subtotal / 100).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tax</span>
-                      <span>${(selectedOrder.tax / 100).toFixed(2)}</span>
+                      <span className="text-gray-600">Impostos</span>
+                      <span>R$ {(selectedOrder.tax / 100).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Shipping</span>
-                      <span>${(selectedOrder.shippingCost / 100).toFixed(2)}</span>
+                      <span className="text-gray-600">Frete</span>
+                      <span>R$ {(selectedOrder.shippingCost / 100).toFixed(2)}</span>
                     </div>
                     {selectedOrder.discount > 0 && (
                       <div className="flex justify-between text-sm text-green-600">
-                        <span>Discount</span>
-                        <span>-${(selectedOrder.discount / 100).toFixed(2)}</span>
+                        <span>Desconto</span>
+                        <span>-R$ {(selectedOrder.discount / 100).toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-lg font-bold pt-2 border-t">
                       <span>Total</span>
-                      <span>${(selectedOrder.total / 100).toFixed(2)}</span>
+                      <span>R$ {(selectedOrder.total / 100).toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -206,11 +206,11 @@ export default function MyOrdersPage() {
                   <div className="pt-4 grid grid-cols-2 gap-2">
                     <Link href={`/dashboard/my-orders/${selectedOrder.id}`}>
                       <Button variant="outline" className="w-full text-sm">
-                        View Details
+                        Ver Detalhes
                       </Button>
                     </Link>
                     <Button variant="outline" className="w-full text-sm">
-                      Track Order
+                      Acompanhar Pedido
                     </Button>
                   </div>
                 </CardContent>
@@ -220,7 +220,7 @@ export default function MyOrdersPage() {
             <Card className="flex items-center justify-center min-h-96">
               <CardContent className="text-center">
                 <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600">Select an order to view details</p>
+                <p className="text-gray-600">Selecione um pedido para ver detalhes</p>
               </CardContent>
             </Card>
           )}
