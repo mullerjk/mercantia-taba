@@ -64,7 +64,7 @@
     "nanoid": "^5.1.6",
     "next": "^16.0.3",
     "next-intl": "^4.5.3",
-    "next-themes": "^0.3.0",
+    "next-themes": "^0.3.5",
     "pagarme": "^4.35.2",
     "postgres": "^3.4.7",
     "react": "^19.2.0",
