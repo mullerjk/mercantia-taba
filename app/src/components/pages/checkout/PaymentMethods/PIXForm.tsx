@@ -10,7 +10,7 @@ interface PIXFormProps {
   total: number
   orderId?: string
   customerId?: string
-  onSuccess: (paymentId: string) => void
+  onSuccess: (paymentId: string, method: 'pix') => void
   onError: (error: string) => void
   loading?: boolean
 }
@@ -32,13 +32,17 @@ export function PIXForm({
     transactionId: string
   } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [paymentCompleted, setPaymentCompleted] = useState(false)
+  const [countdown, setCountdown] = useState(1800) // 30 minutos em segundos
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
 
   const handleGeneratePIX = async () => {
     setProcessing(true)
     setSubmitError(null)
+    setShowSuccessMessage(false)
 
     try {
-      // CORREÇÃO: Usar API v5 ao invés da v1
+      // Usar API v5 ao invés da v1
       const response = await fetch('/api/payments/pix-v5', {
         method: 'POST',
         headers: {
@@ -60,7 +64,26 @@ export function PIXForm({
 
       const result = await response.json()
       setPixData(result)
-      onSuccess(result.transactionId)
+      
+      // INÍCIO MELHORIA UX: Mostrar PIX por 30 segundos antes de redirecionar
+      setShowSuccessMessage(true)
+      
+      // Timer para countdown
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            setPaymentCompleted(true)
+            onSuccess(result.transactionId, 'pix')
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      // Limpar timer quando componente desmontar
+      return () => clearInterval(timer)
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
       setSubmitError(errorMessage)
@@ -78,7 +101,14 @@ export function PIXForm({
     }
   }
 
-  if (pixData) {
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+
+  // Se PIX foi gerado e está exibindo
+  if (pixData && showSuccessMessage) {
     return (
       <div className="space-y-4">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -87,7 +117,48 @@ export function PIXForm({
             <h3 className="font-semibold text-green-900">PIX Gerado com Sucesso!</h3>
           </div>
           <p className="text-sm text-green-800 mb-4">
-            Você tem 30 minutos para confirmar o pagamento. Escaneie o código QR ou copie a chave PIX abaixo.
+            Complete o pagamento. Você será redirecionado automaticamente em {formatTime(countdown)} segundos.
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4">
+            <p className="text-sm text-blue-900">
+              <strong>Aguarde alguns segundos</strong> para ver o QR code e a chave PIX.
+            </p>
+          </div>
+        </div>
+
+        {/* Timer */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-2">Aguarde...</p>
+              <p className="text-2xl font-bold text-blue-600">{formatTime(countdown)}</p>
+              <p className="text-xs text-gray-500">segundos restantes</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Mensagem informativa */}
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Acompanhe seu pedido na página "Meus Pedidos" após o pagamento.
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  // Se PIX foi gerado e carregado
+  if (pixData && !showSuccessMessage) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <h3 className="font-semibold text-green-900">PIX Pronto para Pagamento!</h3>
+          </div>
+          <p className="text-sm text-green-800 mb-4">
+            Escaneie o código QR ou copie a chave PIX abaixo para completar o pagamento.
           </p>
         </div>
 
@@ -156,7 +227,7 @@ export function PIXForm({
         </div>
 
         <p className="text-xs text-gray-500 text-center">
-          Você será notificado quando o pagamento for confirmado
+          Você será redirecionado automaticamente após o pagamento
         </p>
       </div>
     )
