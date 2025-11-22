@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
+import { updateOrderStatus, createPaymentRecord } from '@/lib/supabase-service'
 
 /**
  * Webhook do Pagar.me para receber notificações de pagamentos
@@ -157,16 +158,22 @@ export async function POST(request: NextRequest) {
 async function handleOrderCreated(orderData: any) {
   console.log('📝 Processando criação de pedido:', orderData.id)
 
-  // TODO: Salvar pedido no banco de dados
-  // Exemplo:
-  // await saveOrderToDatabase({
-  //   orderId: orderData.id,
-  //   customerId: orderData.customer?.id,
-  //   amount: orderData.amount,
-  //   items: orderData.items,
-  //   status: 'pending',
-  //   createdAt: new Date()
-  // })
+  try {
+    // Criar registro de pagamento para rastreamento
+    await createPaymentRecord(orderData.id, {
+      pagarme_order_id: orderData.id,
+      amount: orderData.amount,
+      status: 'pending',
+      payment_method: 'pix',
+      event_type: 'order_created',
+      created_at: new Date().toISOString()
+    })
+
+    console.log('✅ Pedido registrado no sistema:', orderData.id)
+  } catch (error) {
+    console.error('❌ Erro ao processar criação do pedido:', error)
+    throw error
+  }
 }
 
 /**
@@ -175,9 +182,26 @@ async function handleOrderCreated(orderData: any) {
 async function handleOrderUpdated(orderData: any) {
   console.log('📝 Processando atualização de pedido:', orderData.id, '- Status:', orderData.status)
 
-  // TODO: Atualizar status do pedido no banco
-  // Exemplo:
-  // await updateOrderStatus(orderData.id, orderData.status)
+  // Map Pagar.me status to internal database status
+  const statusMapping: Record<string, string> = {
+    'pending': 'pending',
+    'paid': 'confirmed',  // Pagar.me paid → internal confirmed
+    'canceled': 'cancelled',
+    'failed': 'cancelled'
+  }
+
+  const dbStatus = statusMapping[orderData.status] || orderData.status
+
+  try {
+    await updateOrderStatus(orderData.id, dbStatus, {
+      pagarme_status: orderData.status,
+      event_type: 'order_updated',
+      updated_at: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('❌ Erro ao atualizar status do pedido:', error)
+    throw error
+  }
 }
 
 /**
@@ -186,10 +210,21 @@ async function handleOrderUpdated(orderData: any) {
 async function handlePaymentFailed(orderData: any) {
   console.log('❌ Processando falha de pagamento:', orderData.id)
 
-  // TODO: Atualizar status e notificar usuário
-  // Exemplo:
-  // await updateOrderStatus(orderData.id, 'payment_failed')
-  // await sendPaymentFailureNotification(orderData.customer?.id)
+  try {
+    await updateOrderStatus(orderData.id, 'cancelled', {
+      pagarme_status: 'payment_failed',
+      failure_reason: orderData.failure_reason || 'Unknown',
+      event_type: 'payment_failed',
+      updated_at: new Date().toISOString()
+    })
+
+    // TODO: Implementar notificação de falha por email
+    console.log('📧 TODO: Enviar notificação de falha para o cliente')
+
+  } catch (error) {
+    console.error('❌ Erro ao processar falha de pagamento:', error)
+    throw error
+  }
 }
 
 /**
@@ -198,11 +233,25 @@ async function handlePaymentFailed(orderData: any) {
 async function handleOrderPaid(orderData: any) {
   console.log('✅ Processando pedido pago:', orderData.id)
 
-  // TODO: Atualizar status, ativar produtos/serviços, enviar confirmação
-  // Exemplo:
-  // await updateOrderStatus(orderData.id, 'paid')
-  // await activateUserProducts(orderData.customer?.id)
-  // await sendPaymentConfirmation(orderData.customer?.email)
+  try {
+    await updateOrderStatus(orderData.id, 'confirmed', {
+      pagarme_status: 'paid',
+      payment_date: new Date().toISOString(),
+      event_type: 'order_paid',
+      paid_amount: orderData.amount,
+      updated_at: new Date().toISOString()
+    })
+
+    // TODO: Implementar ativação de produtos/serviços
+    console.log('🎯 TODO: Ativar produtos/serviços para o cliente')
+
+    // TODO: Implementar notificação de confirmação
+    console.log('📧 TODO: Enviar confirmação de pagamento para o cliente')
+
+  } catch (error) {
+    console.error('❌ Erro ao processar pedido pago:', error)
+    throw error
+  }
 }
 
 /**
