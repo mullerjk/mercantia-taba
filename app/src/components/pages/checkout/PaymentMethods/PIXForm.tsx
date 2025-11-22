@@ -38,7 +38,8 @@ export function PIXForm({
     setSubmitError(null)
 
     try {
-      const response = await fetch('/api/payments/pix', {
+      // CORREÇÃO: Usar API v5 ao invés da v1
+      const response = await fetch('/api/payments/pix-v5', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
