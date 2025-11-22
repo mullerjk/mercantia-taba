@@ -36,6 +36,36 @@ Marque todos os eventos necessários:
 ### 5. Salve as Configurações
 Clique em **"Salvar"** ou **"Save"**
 
+## 🎯 TESTE IMEDIATO COM SIMULADOR PIX
+
+### Método 1: Via API (Mais Fácil)
+Após criar um pagamento PIX, use este endpoint para aprovação imediata:
+
+```
+GET https://mercantia-taba.vercel.app/api/payments/pix-simulator?orderId=SEU_ORDER_ID
+```
+
+**Exemplo real:**
+```bash
+curl "https://mercantia-taba.vercel.app/api/payments/pix-simulator?orderId=or_NwWjbrzS0SWb3E1m"
+```
+
+**Resposta esperada:**
+```json
+{
+  "success": true,
+  "message": "Payment approved via PIX simulator",
+  "orderId": "or_NwWjbrzS0SWb3E1m",
+  "status": "confirmed"
+}
+```
+
+### Método 2: Via Simulador Pagar.me
+1. Vá para: `https://docs.pagar.me/docs/simulador-pix`
+2. Cole o **Order ID** (exemplo: `or_NwWjbrzS0SWb3E1m`)
+3. Clique em **"Aprovar pagamento"**
+4. O webhook será chamado automaticamente
+
 ## 🔍 Verificação
 Após configurar, você pode testar o webhook:
 

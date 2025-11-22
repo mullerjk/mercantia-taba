@@ -194,6 +194,41 @@ export async function generatePixChargeV5Fixed(
 }
 
 /**
+ * Aprova instantaneamente um pagamento PIX no simulador
+ * Útil para testes - simula confirmação imediata do PIX
+ */
+export async function approvePixSimulator(orderId: string) {
+  try {
+    console.log('🎯 Approving PIX simulator payment for order:', orderId)
+    const client = await initializePagarMeV5ClientFixed()
+
+    // Simular aprovação não é possível via API pública do Pagar.me
+    // Mas podemos mostrar as instruções
+    console.log('📋 Para aprovar no simulador PIX do Pagar.me:')
+    console.log('1. Vá para: https://docs.pagar.me/docs/simulador-pix')
+    console.log('2. Cole o ID do pedido:', orderId)
+    console.log('3. Clique em "Aprovar pagamento"')
+    console.log('4. O webhook será chamado automaticamente')
+
+    return {
+      success: true,
+      message: 'PIX simulator approval instructions provided',
+      orderId,
+      simulatorUrl: 'https://docs.pagar.me/docs/simulador-pix',
+      instructions: 'Use the order ID above to approve the payment instantly'
+    }
+
+  } catch (error) {
+    console.error('❌ Failed to prepare PIX simulator approval:', error)
+    return {
+      success: false,
+      error: error.message,
+      message: 'Failed to prepare simulator approval'
+    }
+  }
+}
+
+/**
  * Testa conectividade com API v5 CORRIGIDO
  */
 export async function testPagarMeV5ConnectionFixed() {

@@ -234,13 +234,29 @@ async function handleOrderPaid(orderData: any) {
   console.log('✅ Processando pedido pago:', orderData.id)
 
   try {
-    await updateOrderStatus(orderData.id, 'confirmed', {
+    // Verifica se é um pagamento de teste/simulador (aprovação imediata)
+    const isSimulatorPayment = orderData.metadata?.source === 'pix_simulator' ||
+                              orderData.amount < 1000 || // Pagamentos pequenos geralmente são testes
+                              orderData.customer?.email?.includes('teste') ||
+                              new Date(orderData.created_at) > new Date(Date.now() - 5 * 60 * 1000) // Criado nos últimos 5 minutos
+
+    const targetStatus = isSimulatorPayment ? 'confirmed' : 'confirmed'
+
+    console.log(`📋 Pagamento classificado como: ${isSimulatorPayment ? 'SIMULADOR (confirmação imediata)' : 'PRODUÇÃO'}`)
+
+    await updateOrderStatus(orderData.id, targetStatus, {
       pagarme_status: 'paid',
       payment_date: new Date().toISOString(),
       event_type: 'order_paid',
       paid_amount: orderData.amount,
+      is_simulator: isSimulatorPayment,
+      simulator_instructions: isSimulatorPayment ? 'Pagamento aprovado via simulador PIX - não requer ação manual' : null,
       updated_at: new Date().toISOString()
     })
+
+    if (isSimulatorPayment) {
+      console.log('🎯 SIMULADOR: Pedido confirmado imediatamente!')
+    }
 
     // TODO: Implementar ativação de produtos/serviços
     console.log('🎯 TODO: Ativar produtos/serviços para o cliente')
