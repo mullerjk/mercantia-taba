@@ -6,7 +6,7 @@ import * as pagarme from 'pagarme'
 export async function runPagarMeDiagnostic() {
   console.log('🔍 === DIAGNÓSTICO COMPLETO PAGAR.ME ===')
   
-  const diagnosticResults = {
+  const diagnosticResults: any = {
     environment: {},
     initialization: {},
     apiTests: [],
@@ -43,7 +43,7 @@ export async function runPagarMeDiagnostic() {
     workingClient = testClient
     diagnosticResults.initialization.direct = 'SUCCESS'
     console.log('  ✅ Method 1: Direct module - SUCCESS')
-  } catch (error) {
+  } catch (error: any) {
     diagnosticResults.initialization.direct = `FAILED: ${error.message}`
     console.log('  ❌ Method 1: Direct module - FAILED')
   }
@@ -55,7 +55,7 @@ export async function runPagarMeDiagnostic() {
       workingClient = testClient
       diagnosticResults.initialization.withSecretKey = 'SUCCESS'
       console.log('  ✅ Method 2: With secret key - SUCCESS')
-    } catch (error) {
+    } catch (error: any) {
       diagnosticResults.initialization.withSecretKey = `FAILED: ${error.message}`
       console.log('  ❌ Method 2: With secret key - FAILED')
     }
@@ -68,7 +68,7 @@ export async function runPagarMeDiagnostic() {
       workingClient = testClient
       diagnosticResults.initialization.withApiKey = 'SUCCESS'
       console.log('  ✅ Method 3: With API key - SUCCESS')
-    } catch (error) {
+    } catch (error: any) {
       diagnosticResults.initialization.withApiKey = `FAILED: ${error.message}`
       console.log('  ❌ Method 3: With API key - FAILED')
     }
@@ -89,8 +89,8 @@ export async function runPagarMeDiagnostic() {
     await workingClient.customers.list()
     diagnosticResults.apiTests.push({ test: 'customers.list', result: 'SUCCESS - Keys valid' })
     console.log('  ✅ customers.list - SUCCESS (keys valid)')
-  } catch (error) {
-    const errorInfo = {
+  } catch (error: any) {
+    const errorInfo: any = {
       test: 'customers.list',
       result: 'FAILED',
       status: error.response?.status,
@@ -121,8 +121,8 @@ export async function runPagarMeDiagnostic() {
     const transaction = await workingClient.transactions.create(minimalTransaction)
     diagnosticResults.apiTests.push({ test: 'pix.transaction', result: 'SUCCESS - Transaction created' })
     console.log('  ✅ PIX transaction - SUCCESS (keys valid, transaction created)')
-  } catch (error) {
-    const errorInfo = {
+  } catch (error: any) {
+    const errorInfo: any = {
       test: 'pix.transaction',
       result: 'FAILED',
       status: error.response?.status,
@@ -145,9 +145,9 @@ export async function runPagarMeDiagnostic() {
                       diagnosticResults.environment.hasApiKey &&
                       diagnosticResults.environment.apiKeyFormat === 'VALID'
 
-  const hasWorkingInitialization = Object.values(diagnosticResults.initialization).some(result => result === 'SUCCESS')
+  const hasWorkingInitialization = Object.values(diagnosticResults.initialization).some((result: any) => result === 'SUCCESS')
 
-  const hasSuccessfulApiTest = diagnosticResults.apiTests.some(test => test.result === 'SUCCESS - Keys valid' || test.result === 'SUCCESS - Transaction created')
+  const hasSuccessfulApiTest = diagnosticResults.apiTests.some((test: any) => test.result === 'SUCCESS - Keys valid' || test.result === 'SUCCESS - Transaction created')
 
   if (hasValidKeys && hasWorkingInitialization && hasSuccessfulApiTest) {
     diagnosticResults.finalDiagnosis = 'SUCCESS - Everything is working correctly'
@@ -178,7 +178,7 @@ export async function getDiagnosticResult() {
       diagnosis: result,
       timestamp: new Date().toISOString()
     }
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false,
       error: error.message,
