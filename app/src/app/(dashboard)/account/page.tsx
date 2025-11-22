@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { PersonSchema, PostalAddress } from '@/types/person'
+import { PersonSchema, PostalAddress, Organization, Country } from '@/types/person'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,12 +13,21 @@ import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AlertCircle, CheckCircle2, Loader2, User, MapPin, Briefcase, Globe, Users, Shield } from 'lucide-react'
 
+interface AuthUser {
+  fullName?: string;
+  email: string;
+  avatarUrl?: string;
+  emailVerified?: boolean;
+  role?: string;
+  // Add any other properties returned by /api/auth/verify if they are used
+}
+
 export default function AccountPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [formData, setFormData] = useState<Partial<PersonSchema>>({
     '@type': 'Person',
     name: '',
@@ -40,11 +49,7 @@ export default function AccountPage() {
     },
   })
 
-  useEffect(() => {
-    loadUserProfile()
-  }, [])
-
-  async function loadUserProfile() {
+  const loadUserProfile = useCallback(async () => {
     try {
       // Get authenticated user
       const response = await fetch('/api/auth/verify', {
@@ -56,16 +61,16 @@ export default function AccountPage() {
         return
       }
 
-      const { user } = await response.json()
-      setUser(user)
+      const { user: fetchedUser } = await response.json() // Renamed to avoid conflict
+      setUser(fetchedUser)
 
       // Load person entity if exists
       // For now, use user data
       setFormData(prev => ({
         ...prev,
-        name: user.fullName || '',
-        email: user.email || '',
-        image: user.avatarUrl || '',
+        name: fetchedUser.fullName || '',
+        email: fetchedUser.email || '',
+        image: fetchedUser.avatarUrl || '',
       }))
 
       setLoading(false)
@@ -74,7 +79,11 @@ export default function AccountPage() {
       setMessage({ type: 'error', text: 'Failed to load profile' })
       setLoading(false)
     }
-  }
+  }, [router, setUser, setFormData, setMessage, setLoading]) // Added dependencies
+
+  useEffect(() => {
+    loadUserProfile()
+  }, [loadUserProfile]) // Added loadUserProfile as dependency
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -109,11 +118,12 @@ export default function AccountPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  function updateNestedField(parent: string, field: string, value: any) {
+  function updateNestedField(parent: 'address', field: keyof PostalAddress, value: string) {
     setFormData(prev => ({
       ...prev,
       [parent]: {
-        ...((prev as any)[parent] || {}),
+        '@type': 'PostalAddress', // Ensure @type is always present
+        ...(prev.address || {}),
         [field]: value,
       },
     }))
@@ -434,7 +444,7 @@ export default function AccountPage() {
                   <Label htmlFor="worksFor">Company/Organization</Label>
                   <Input
                     id="worksFor"
-                    value={typeof formData.worksFor === 'object' ? (formData.worksFor as any)?.name : ''}
+                    value={typeof formData.worksFor === 'object' ? (formData.worksFor as Organization)?.name : ''}
                     onChange={(e) => updateField('worksFor', { '@type': 'Organization', name: e.target.value })}
                     placeholder="Acme Corporation"
                   />
@@ -502,7 +512,7 @@ export default function AccountPage() {
                   <Label htmlFor="nationality">Nationality</Label>
                   <Input
                     id="nationality"
-                    value={typeof formData.nationality === 'object' ? (formData.nationality as any)?.name : ''}
+                    value={typeof formData.nationality === 'object' ? (formData.nationality as Country)?.name : ''}
                     onChange={(e) => updateField('nationality', { '@type': 'Country', name: e.target.value })}
                     placeholder="United States"
                   />
