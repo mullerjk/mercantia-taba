@@ -1,196 +1,474 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { 
-  ShoppingBag, 
-  Package, 
-  Users, 
-  TrendingUp, 
-  Star,
-  ArrowRight,
-  Zap,
-  CheckCircle,
-  Globe,
-  Shield,
-  Sparkles
-} from 'lucide-react'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Activity,
+  ArrowUpRight,
+  CreditCard,
+  DollarSign,
+  Download,
+  Users,
+  CalendarIcon,
+  FileTextIcon,
+  BellIcon,
+  Share2Icon,
+  Home,
+  Settings,
+  User,
+  BarChart3,
+  ShoppingCart,
+  Package,
+  TrendingUp,
+  MoreHorizontal,
+  Search,
+  Plus,
+  ChevronDown,
+  Menu,
+  X,
+  Heart,
+  Store
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { useAuth } from '@/contexts/AuthContext'
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/contexts/AuthContext";
 
-export default function HomePage() {
-  const { user, loading } = useAuth()
+interface ChangelogItem {
+  id: string;
+  title: string;
+  description: string;
+  emoji: string;
+  category: string;
+  timestamp: string;
+  version?: string;
+  schemaType?: string;
+}
+
+export default function DashboardHome() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [changelogItems, setChangelogItems] = useState<ChangelogItem[]>([]);
+
+  // Redirect to dashboard for authenticated users
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
+  // Fetch real entities from database
+  useEffect(() => {
+    const fetchEntities = async () => {
+      try {
+        console.log('Fetching entities from API...');
+        const response = await fetch('/api/entities');
+        if (response.ok) {
+          const entities = await response.json();
+          console.log('Fetched entities:', entities);
+
+          const items: ChangelogItem[] = entities.map((entity: any) => {
+            const category = entity.schema_type.split(':')[1] || 'Thing';
+            let description = `New ${category} entity registered in the system`;
+
+            // Create specific descriptions based on entity type and properties
+            switch (category) {
+              case 'Person':
+                const personProps = entity.properties || {};
+                const personDetails = [];
+                if (personProps.jobTitle) personDetails.push(personProps.jobTitle);
+                if (personProps.worksFor) personDetails.push(`at ${personProps.worksFor}`);
+                if (personProps.email) personDetails.push(`contact: ${personProps.email}`);
+                description = personDetails.length > 0
+                  ? `${personProps.givenName || ''} ${personProps.familyName || entity.name} - ${personDetails.join(', ')}`
+                  : `${entity.name} joined the network`;
+                break;
+
+              case 'Organization':
+                const orgProps = entity.properties || {};
+                const orgDetails = [];
+                if (orgProps.orgType) orgDetails.push(orgProps.orgType);
+                if (orgProps.foundingDate) orgDetails.push(`Founded ${orgProps.foundingDate}`);
+                if (orgProps.url) orgDetails.push(`Website: ${orgProps.url}`);
+                description = orgDetails.length > 0
+                  ? `${entity.name} - ${orgDetails.join(', ')}`
+                  : `${entity.name} is now part of our business network`;
+                break;
+
+              case 'Product':
+                const productProps = entity.properties || {};
+                const productDetails = [];
+                if (productProps.price) productDetails.push(`$${productProps.price}`);
+                if (productProps.category) productDetails.push(productProps.category);
+                if (productProps.brand) productDetails.push(`by ${productProps.brand}`);
+                description = productDetails.length > 0
+                  ? `${entity.name} - ${productDetails.join(', ')}`
+                  : `${entity.name} now available in our marketplace`;
+                break;
+
+              default:
+                description = entity.properties?.description || `New ${category} entity: ${entity.name}`;
+            }
+
+            return {
+              id: entity.id,
+              title: entity.name,
+              description: description,
+              emoji: getEmojiForCategory(category),
+              category: category,
+              schemaType: entity.schema_type,
+              timestamp: new Date(entity.created_at).toLocaleString(),
+              version: `v1.0.0`,
+            };
+          });
+
+          console.log('Converted to timeline items:', items);
+          setChangelogItems(items);
+        } else {
+          console.error('Failed to fetch entities:', response.status);
+          setChangelogItems([]);
+        }
+      } catch (error) {
+        console.error('Error fetching entities:', error);
+        setChangelogItems([]);
+      }
+    };
+
+    fetchEntities();
+
+    // Refresh data every 30 seconds
+    const interval = setInterval(fetchEntities, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const getEmojiForCategory = (category: string): string => {
+    const emojiMap: Record<string, string> = {
+      "Thing": "🌐",
+      "CreativeWork": "🎨",
+      "Organization": "🏢",
+      "Person": "👤",
+      "Place": "📍",
+      "Event": "📅",
+      "Product": "📦",
+      "Action": "⚡",
+      "MedicalEntity": "🏥",
+      "BioChemEntity": "🧬",
+      "ChemicalSubstance": "⚗️",
+      "New": "✨",
+    };
+    return emojiMap[category] || "📄";
+  };
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Redirect authenticated users to dashboard
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5">
-      {/* Hero Section */}
-      <div className="container mx-auto px-6 py-20">
-        <div className="text-center max-w-4xl mx-auto">
-          {/* Logo and Brand */}
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg">
-              <Zap className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <div className="text-left">
-              <h1 className="text-4xl font-bold text-foreground">Mercantia</h1>
-              <p className="text-muted-foreground">Super Admin Dashboard</p>
-            </div>
-          </div>
-
-          <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            Marketplace Inteligente com
-            <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent"> IA Avançada</span>
-          </h2>
-          
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-            Experimente o futuro do e-commerce com dados estruturados Schema.org, 
-            gestão inteligente de produtos e pagamentos PIX integrados.
-          </p>
-
-          {/* Status Badges */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            <Badge variant="secondary" className="px-4 py-2">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Sistema Operacional
-            </Badge>
-            <Badge variant="secondary" className="px-4 py-2">
-              <Shield className="w-4 h-4 mr-2" />
-              Segurança Avançada
-            </Badge>
-            <Badge variant="secondary" className="px-4 py-2">
-              <Sparkles className="w-4 h-4 mr-2" />
-              IA Integrada
-            </Badge>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Button asChild size="lg" className="px-8">
-              <Link href="/marketplace">
-                <ShoppingBag className="w-5 h-5 mr-2" />
-                Explorar Marketplace
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
-            </Button>
-            {user ? (
-              <Button asChild variant="outline" size="lg" className="px-8">
-                <Link href="/(dashboard)">
-                  <Users className="w-5 h-5 mr-2" />
-                  Meus Painéis
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild variant="outline" size="lg" className="px-8">
-                <Link href="/auth/login">
-                  Fazer Login
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                <ShoppingBag className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle className="text-lg">Marketplace Inteligente</CardTitle>
-              <CardDescription>
-                Descoberta de produtos baseada em dados estruturados e IA
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                <Package className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle className="text-lg">Gestão de Produtos</CardTitle>
-              <CardDescription>
-                Organização e categorização automática com Schema.org
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle className="text-lg">Rede de Relacionamentos</CardTitle>
-              <CardDescription>
-                Conecte-se com vendedores, compradores e parceiros
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                <TrendingUp className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle className="text-lg">Analytics Avançados</CardTitle>
-              <CardDescription>
-                Insights detalhados sobre vendas, produtos e performance
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* Quick Access */}
-        <div className="mt-20 max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold text-center mb-8">Acesso Rápido ao Marketplace</h3>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button asChild variant="outline" className="h-auto p-4 justify-start">
-              <Link href="/marketplace/organizations">
-                <Users className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">Organizações</div>
-                  <div className="text-sm text-muted-foreground">Ver vendedores e marcas</div>
-                </div>
-              </Link>
-            </Button>
-            
-            <Button asChild variant="outline" className="h-auto p-4 justify-start">
-              <Link href="/marketplace/products">
-                <Package className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">Produtos</div>
-                  <div className="text-sm text-muted-foreground">Explorar catálogo completo</div>
-                </div>
-              </Link>
-            </Button>
-            
-            <Button asChild variant="outline" className="h-auto p-4 justify-start">
-              <Link href="/marketplace/departments">
-                <Globe className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">Departamentos</div>
-                  <div className="text-sm text-muted-foreground">Navegar por categorias</div>
-                </div>
-              </Link>
-            </Button>
-          </div>
+    <div className="space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm">
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            Last 30 days
+          </Button>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t bg-card/30 backdrop-blur-sm py-8">
-        <div className="container mx-auto px-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Zap className="w-5 h-5 text-primary" />
-            <span className="font-semibold">Mercantia</span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Plataforma desenvolvida com tecnologias de ponta para o futuro do e-commerce
-          </p>
-        </div>
-      </footer>
+      {/* Quick Access to Dashboard Modules */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => router.push('/(dashboard)/marketplace')}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Marketplace
+            </CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Browse Products</div>
+            <p className="text-xs text-muted-foreground">
+              Explore marketplace inventory
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => router.push('/(dashboard)/organization')}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Organizations
+            </CardTitle>
+            <Store className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Manage Business</div>
+            <p className="text-xs text-muted-foreground">
+              Business network & relations
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => router.push('/(dashboard)/relationships')}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Relationships
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Connect</div>
+            <p className="text-xs text-muted-foreground">
+              Network & social connections
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => router.push('/(dashboard)/inventory')}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Inventory
+            </CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Manage Items</div>
+            <p className="text-xs text-muted-foreground">
+              Product & asset management
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Overview Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Revenue
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">$45,231.89</div>
+            <p className="text-xs text-muted-foreground">
+              +20.1% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Subscriptions
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+2350</div>
+            <p className="text-xs text-muted-foreground">
+              +180.1% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Sales</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+12,234</div>
+            <p className="text-xs text-muted-foreground">
+              +19% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Now</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+573</div>
+            <p className="text-xs text-muted-foreground">
+              +201 since last hour
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts and Tables */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Overview</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+              Chart placeholder - Revenue over time
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Recent Sales</CardTitle>
+            <CardDescription>
+              You made 265 sales this month.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-8">
+              <div className="flex items-center">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src="/avatars/01.png" alt="Avatar" />
+                  <AvatarFallback>OM</AvatarFallback>
+                </Avatar>
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">Olivia Martin</p>
+                  <p className="text-sm text-muted-foreground">
+                    olivia.martin@email.com
+                  </p>
+                </div>
+                <div className="ml-auto font-medium">+$1,999.00</div>
+              </div>
+              <div className="flex items-center">
+                <Avatar className="flex h-9 w-9 items-center justify-center space-y-0 border">
+                  <AvatarImage src="/avatars/02.png" alt="Avatar" />
+                  <AvatarFallback>JL</AvatarFallback>
+                </Avatar>
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">Jackson Lee</p>
+                  <p className="text-sm text-muted-foreground">jackson.lee@email.com</p>
+                </div>
+                <div className="ml-auto font-medium">+$39.00</div>
+              </div>
+              <div className="flex items-center">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src="/avatars/03.png" alt="Avatar" />
+                  <AvatarFallback>IN</AvatarFallback>
+                </Avatar>
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">Isabella Nguyen</p>
+                  <p className="text-sm text-muted-foreground">
+                    isabella.nguyen@email.com
+                  </p>
+                </div>
+                <div className="ml-auto font-medium">+$299.00</div>
+              </div>
+              <div className="flex items-center">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src="/avatars/04.png" alt="Avatar" />
+                  <AvatarFallback>WK</AvatarFallback>
+                </Avatar>
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">William Kim</p>
+                  <p className="text-sm text-muted-foreground">will@email.com</p>
+                </div>
+                <div className="ml-auto font-medium">+$99.00</div>
+              </div>
+              <div className="flex items-center">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src="/avatars/05.png" alt="Avatar" />
+                  <AvatarFallback>SD</AvatarFallback>
+                </Avatar>
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">Sofia Davis</p>
+                  <p className="text-sm text-muted-foreground">sofia.davis@email.com</p>
+                </div>
+                <div className="ml-auto font-medium">+$39.00</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Activity Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>
+            Latest updates from your network
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Entity</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">Timestamp</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {changelogItems.slice(0, 5).map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <span>{item.emoji}</span>
+                      {item.title}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{item.category}</Badge>
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {item.description}
+                  </TableCell>
+                  <TableCell className="text-right text-sm text-muted-foreground">
+                    {new Date(item.timestamp).toLocaleDateString()}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 }
